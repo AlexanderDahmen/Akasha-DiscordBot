@@ -22,7 +22,8 @@ import net.dv8tion.jda.core.OnlineStatus;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.flywaydb.core.Flyway;
 import de.dahmen.alexander.akasha.core.AkashaComponents;
-import de.dahmen.alexander.akasha.core.AkashaListener;
+import de.dahmen.alexander.akasha.core.listener.AkashaListener;
+import de.dahmen.alexander.akasha.core.listener.LifecycleListener;
 import lombok.AllArgsConstructor;
 
 /**
@@ -47,11 +48,14 @@ public class Akasha {
         database = createDataSource();
         migrate(database);
         
-        conversation = new ConversationHandler();
-        jda = createJDA(new AkashaListener(conversation));
+        jda = createJDA();
         components = new AkashaComponentsImpl(
                 new MysqlJdaTaskRepository(database),
                 new MysqlJdaUserRepository(jda, database));
+        
+        conversation = new ConversationHandler(components);
+        
+        jda.addEventListener(new AkashaListener(conversation));
         
         Runtime.getRuntime().addShutdownHook(new Thread(Akasha::shutdown));
     }
@@ -62,7 +66,7 @@ public class Akasha {
     
     public static void shutdown() {
         safeClose(database);
-        jda.shutdownNow();
+        jda.shutdown();
     }
     
     private static BasicDataSource createDataSource() {
@@ -84,11 +88,11 @@ public class Akasha {
         flyway.migrate();
     }
     
-    private static JDA createJDA(Object... listeners) throws LoginException, InterruptedException {
+    private static JDA createJDA() throws LoginException, InterruptedException {
         return new JDABuilder(AccountType.BOT)
                 .setToken(config.get(DiscordConfig.class).getToken())
                 .setStatus(OnlineStatus.ONLINE)
-                .addEventListener(listeners)
+                .addEventListener(new LifecycleListener())
                 .setAutoReconnect(true)
                 .buildBlocking();
     }

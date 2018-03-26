@@ -1,6 +1,7 @@
 
 package de.dahmen.alexander.akasha.core.conversation;
 
+import de.dahmen.alexander.akasha.core.AkashaComponents;
 import de.dahmen.alexander.akasha.core.conversation.impl.DefaultFallbackConversation;
 import de.dahmen.alexander.akasha.core.conversation.impl.DummyConversation;
 import de.dahmen.alexander.akasha.core.conversation.impl.MentionReplyConversation;
@@ -11,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.core.MessageBuilder;
@@ -24,30 +24,25 @@ import net.dv8tion.jda.core.entities.Message;
 @Slf4j
 public class ConversationHandler {
     
-    public static interface Init extends Supplier<List<Conversation>> { }
-    
-    public static final Init DEFAULT_INIT = () -> Arrays.asList(
+    public static final Initializer DEFAULT_INIT = (components) -> Arrays.asList(
             new MentionReplyConversation(),
             new DummyConversation(),
             new TestConversation(),
             new DefaultFallbackConversation());
     
-    private static final Conversation MISSING_FALLBACK = new FallbackConversation() {
-        @Override public Conversation.Instance instance() {
-            return (msg) -> new MessageBuilder("ERROR :: MISSING FALLBACK CONVERSATION").build();
-        }
-    };
+    private static final FallbackConversation MISSING_FALLBACK = (msg) -> new MessageBuilder()
+            .append("ERROR :: MISSING FALLBACK CONVERSATION").build();
     
     private final List<Conversation> conversations;
     private final Conversation fallbackConversation;
     private final ConcurrentMap<Long, Conversation.Instance> activeConversations;
 
-    public ConversationHandler() {
-        this(DEFAULT_INIT);
+    public ConversationHandler(AkashaComponents components) {
+        this(components, DEFAULT_INIT);
     }
     
-    public ConversationHandler(Init init) {
-        this(init.get());
+    public ConversationHandler(AkashaComponents components, Initializer init) {
+        this(init.init(components));
     }
     
     public ConversationHandler(List<Conversation> conversations) {
@@ -103,5 +98,14 @@ public class ConversationHandler {
     
     private void onMessageSendFailed(Throwable error) {
         log.error("Error sending Message: " + error.getMessage(), error);
+    }
+    
+    /**
+     * Interface for instantiating a List of Conversation implementations
+     * from an {@code AkashaComponents} instance
+     */
+    @FunctionalInterface
+    public static interface Initializer {
+        List<Conversation> init(AkashaComponents components);
     }
 }

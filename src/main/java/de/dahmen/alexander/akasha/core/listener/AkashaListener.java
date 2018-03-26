@@ -1,12 +1,10 @@
 
-package de.dahmen.alexander.akasha.core;
+package de.dahmen.alexander.akasha.core.listener;
 
-import de.dahmen.alexander.akasha.Akasha;
 import de.dahmen.alexander.akasha.core.conversation.ConversationHandler;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.SelfUser;
-import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.ReadyEvent;
 import net.dv8tion.jda.core.events.ShutdownEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
@@ -26,19 +24,6 @@ public class AkashaListener extends ListenerAdapter {
         this.handler = handler;
     }
     
-    @Override
-    public void onReady(ReadyEvent event) {
-        log.info("Akasha -- Ready");
-    }
-    
-    @Override
-    public void onShutdown(ShutdownEvent event) {
-        log.info("Akasha -- Shutdown {} @ {} :: {}",
-                event.getCloseCode().name(),
-                event.getShutdownTime(),
-                event.getCloseCode().getMeaning());
-    }
-
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
         SelfUser self = event.getJDA().getSelfUser();

@@ -6,14 +6,26 @@ import net.dv8tion.jda.core.entities.Message;
  *
  * @author Alexander
  */
-public abstract class FallbackConversation implements Conversation {
+public interface FallbackConversation extends Conversation {
     /**
      * Fallback for a conversation that never accepts messages on it's own
      * @param message Ignored
      * @return Always false
      */
     @Override
-    public final boolean accept(Message message) {
+    default boolean accept(Message message) {
         return false;
     }
+    
+    /**
+     * Fallback conversation instance:
+     * Will return a fallback Message and finish the conversation
+     * @return Fallback conversation instance
+     */
+    @Override
+    default Instance instance() {
+        return this::fallback;
+    }
+    
+    Message fallback(Message msg);
 }

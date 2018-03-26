@@ -3,18 +3,17 @@ package de.dahmen.alexander.akasha.core.conversation.impl;
 
 import de.dahmen.alexander.akasha.core.conversation.FallbackConversation;
 import net.dv8tion.jda.core.MessageBuilder;
+import net.dv8tion.jda.core.entities.Message;
 
 /**
  *
  * @author Alexander
  */
-public class DefaultFallbackConversation extends FallbackConversation {
+public class DefaultFallbackConversation implements FallbackConversation {
     @Override
-    public Instance instance() {
-        return ((msg) -> {
-            return new MessageBuilder()
-                    .append("Sorry, I didn't understand that.")
-                    .build();
-        });
+    public Message fallback(Message msg) {
+        return new MessageBuilder()
+                .append("Sorry, I didn't understand that.")
+                .build();
     }
 }
