@@ -6,8 +6,7 @@
 create table akasha_user (
     id                      bigint                      not null                ,
     user_name               varchar(255)                not null                ,
-    channel                 bigint                      not null default 0      ,
-    primary key ( id )                                                          ,
-    key idx_user_name ( user_name )
+    channel_id              bigint                      not null default 0      ,
+    primary key ( id )
 )
 ;

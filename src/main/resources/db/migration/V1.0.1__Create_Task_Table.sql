@@ -16,6 +16,6 @@ create table akasha_task (
     start_time              time                        null default null       ,
     primary key ( id )                                                          ,
     foreign key ( user_id ) references akasha_user ( id )                       ,
-    unique key uidx_task_name ( task_name )
+    unique key uidx_user_task ( user_id, task_name )
 )
 ;
