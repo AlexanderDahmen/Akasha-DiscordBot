@@ -1,3 +1,6 @@
+## --- Config File (contains passwords/keys - DO NOT PUSH)
+src/main/resources/config.properties
+
 ## --- Java
 # Compiled class file
 *.class
