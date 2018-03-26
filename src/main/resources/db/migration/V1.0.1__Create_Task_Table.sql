@@ -6,7 +6,7 @@
 create table akasha_task (
     id                      bigint                      not null auto_increment ,
     user_id                 bigint                      not null                ,
-    task_name               varchar(255)                not null                ,
+    task_name               varchar(128)                not null                ,
     task_type               int                         not null                ,
     task_status             int                         not null                ,
     task_priority           int                         not null                ,
