@@ -61,10 +61,6 @@ public class Akasha {
         Runtime.getRuntime().addShutdownHook(new Thread(Akasha::shutdown));
     }
     
-    public AkashaComponents components() {
-        return components;
-    }
-    
     public static void shutdown() {
         safeClose(database);
         jda.shutdown();
@@ -117,4 +113,6 @@ public class Akasha {
         @Override public JdaTaskRepository jdaTaskRepository() { return jtr; }
         @Override public JdaUserRepository jdaUserRepository() { return jur; }
     }
+    
+    private Akasha() { }
 }

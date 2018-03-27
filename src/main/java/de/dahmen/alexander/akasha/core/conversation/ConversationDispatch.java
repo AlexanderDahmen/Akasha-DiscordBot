@@ -15,14 +15,15 @@ public interface ConversationDispatch {
 
     Initializer DEFAULT_INIT = (components) -> Arrays.asList(
             new MentionReplyConversation(),
-            new DummyConversation(),
-            new TestConversation(),
             new DefaultFallbackConversation());
     
     FallbackConversation MISSING_FALLBACK = (msg) ->
             new MessageBuilder("ERROR :: MISSING FALLBACK CONVERSATION").build();
     
-    
+    /**
+     * Dispatch a message to a Conversation
+     * @param message Incoming message
+     */
     void dispatch(Message message);
     
     /**

@@ -2,7 +2,8 @@
 package de.dahmen.alexander.akasha.core.conversation.impl;
 
 import de.dahmen.alexander.akasha.core.conversation.Conversation;
-import net.dv8tion.jda.core.MessageBuilder;
+import de.dahmen.alexander.akasha.core.conversation.util.MessageTemplate;
+import de.dahmen.alexander.akasha.util.MapBuilder;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Message;
 
@@ -11,6 +12,13 @@ import net.dv8tion.jda.core.entities.Message;
  * @author Alexander
  */
 public class MentionReplyConversation implements Conversation {
+    
+    private final MessageTemplate replyTemplate;
+
+    public MentionReplyConversation() {
+        this.replyTemplate = new MessageTemplate("PublicMentionReply");
+    }
+    
     @Override
     public boolean accept(Message message) {
         return (!message.isFromType(ChannelType.PRIVATE)) &&
@@ -21,15 +29,8 @@ public class MentionReplyConversation implements Conversation {
     
     @Override
     public Instance instance() {
-        /*return (in) -> {
-            return new MessageBuilder()
-                    .appendFormat("Hello, %s!%n", in.getAuthor())
-                    .append("I am Akasha-Bot. You can work with me by sending me a DM.")
-                    .buildAll(MessageBuilder.SplitPolicy.NEWLINE);
-        };*/
-        return (in) -> new MessageBuilder()
-                .appendFormat("Hello, %s!%n", in.getAuthor())
-                .append("I am Akasha-Bot. You can work with me by sending me a DM.")
-                .buildAll(MessageBuilder.SplitPolicy.NEWLINE);
+        return (msg) -> replyTemplate.toString(new MapBuilder<String, Object>()
+                .put("user", msg.getAuthor().getAsMention())
+                .build());
     }
 }

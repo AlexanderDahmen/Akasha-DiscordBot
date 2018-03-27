@@ -52,8 +52,12 @@ public class DefaultConversationDispatch implements ConversationDispatch {
     
     @Override
     public void dispatch(Message message) {
-        // Get the message author's ID
+        // Get the Message AuthorID and Channel
         final long author = message.getAuthor().getIdLong();
+        final MessageChannel channel = message.getChannel();
+        
+        // Send a typing event
+        channel.sendTyping().queue();
         
         // Continue an active conversation, or create a new conversation instance
         final Conversation.Instance active = activeConversations.get(author);
@@ -77,7 +81,7 @@ public class DefaultConversationDispatch implements ConversationDispatch {
         
         // Apply conversation and send back response (if present)
         Optional.ofNullable(instance.apply(message))
-                .ifPresent((response) -> sendResponse(message.getChannel(), response));
+                .ifPresent((response) -> sendResponse(channel, response));
         
         // If conversation was in active conversations map and is now finished,
         // remove it from the active conservations
