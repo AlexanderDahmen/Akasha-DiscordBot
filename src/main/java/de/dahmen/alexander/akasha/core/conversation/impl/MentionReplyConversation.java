@@ -21,11 +21,15 @@ public class MentionReplyConversation implements Conversation {
     
     @Override
     public Instance instance() {
-        return (in) -> {
+        /*return (in) -> {
             return new MessageBuilder()
                     .appendFormat("Hello, %s!%n", in.getAuthor())
                     .append("I am Akasha-Bot. You can work with me by sending me a DM.")
-                    .build();
-        };
+                    .buildAll(MessageBuilder.SplitPolicy.NEWLINE);
+        };*/
+        return (in) -> new MessageBuilder()
+                .appendFormat("Hello, %s!%n", in.getAuthor())
+                .append("I am Akasha-Bot. You can work with me by sending me a DM.")
+                .buildAll(MessageBuilder.SplitPolicy.NEWLINE);
     }
 }

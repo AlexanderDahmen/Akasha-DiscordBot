@@ -1,5 +1,6 @@
 package de.dahmen.alexander.akasha.core.conversation;
 
+import java.util.Queue;
 import java.util.function.Function;
 import net.dv8tion.jda.core.entities.Message;
 
@@ -13,14 +14,16 @@ import net.dv8tion.jda.core.entities.Message;
  */
 public interface Conversation {
     
-    interface Instance extends Function<Message, Message> {
+    interface Instance extends Function<Message, Object> {
         /**
          * Apply a conversation response to an incoming message
          * @param message Message being sent into the conversation
-         * @return Message as a reply to the conversation, or null if no reply should be sent
+         * @return A reply to the conversation, or null if no reply should be sent.
+         *  Special handling is applied to return types {@code Message}, {@code MessageEmbed}
+         *  and {@code Queue<Message>}; all other types are sent as {@code String.valueOf(x)}
          */
         @Override
-        public Message apply(Message message);
+        Object apply(Message message);
         
         /**
          * Check if the conversation is finished.<br>
@@ -42,7 +45,7 @@ public interface Conversation {
     
     /**
      * Return an instance of this conversation
-     * @return Function mapping an incoming function to an outgoing function
+     * @return Function mapping an incoming Message to an outgoing Message (or Messages)
      */
     Instance instance();
 }

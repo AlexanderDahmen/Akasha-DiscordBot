@@ -1,12 +1,10 @@
 
 package de.dahmen.alexander.akasha.core.listener;
 
-import de.dahmen.alexander.akasha.core.conversation.ConversationHandler;
+import de.dahmen.alexander.akasha.core.conversation.ConversationDispatch;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.SelfUser;
-import net.dv8tion.jda.core.events.ReadyEvent;
-import net.dv8tion.jda.core.events.ShutdownEvent;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.events.message.priv.PrivateMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
@@ -18,17 +16,17 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 @Slf4j
 public class AkashaListener extends ListenerAdapter {
 
-    private final ConversationHandler handler;
+    private final ConversationDispatch conversations;
     
-    public AkashaListener(ConversationHandler handler) {
-        this.handler = handler;
+    public AkashaListener(ConversationDispatch handler) {
+        this.conversations = handler;
     }
     
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
         SelfUser self = event.getJDA().getSelfUser();
         if (event.getMessage().isMentioned(self, Message.MentionType.ROLE, Message.MentionType.USER)) {
-            handler.dispatch(event.getMessage());
+            conversations.dispatch(event.getMessage());
         }
     }
     
@@ -36,7 +34,7 @@ public class AkashaListener extends ListenerAdapter {
     public void onPrivateMessageReceived(PrivateMessageReceivedEvent event) {
         SelfUser self = event.getJDA().getSelfUser();
         if (event.getAuthor().getIdLong() != self.getIdLong()) {
-            handler.dispatch(event.getMessage());
+            conversations.dispatch(event.getMessage());
         }
     }
 }

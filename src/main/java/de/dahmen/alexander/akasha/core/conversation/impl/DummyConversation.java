@@ -17,6 +17,6 @@ public class DummyConversation implements Conversation {
     
     @Override
     public Instance instance() {
-        return (msg) -> new MessageBuilder().append("I LOVE BROCCOLI!!!").build();
+        return (msg) -> new MessageBuilder("I LOVE BROCCOLI!!!");
     }
 }

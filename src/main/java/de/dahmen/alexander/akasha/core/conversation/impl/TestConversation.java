@@ -26,30 +26,23 @@ public class TestConversation implements Conversation {
         int counter = 0;
         
         @Override
-        public Message apply(Message message) {
+        public Object apply(Message message) {
             switch (state) {
                 case BEGIN:
                     state = ConvState.GOING;
-                    return new MessageBuilder()
-                            .append("You started a test conversation.")
-                            .build();
+                    return "You started a test conversation.";
                 case GOING:
                     if (message.getContentRaw().equalsIgnoreCase("goodbye")) {
                         state = ConvState.END;
-                        return new MessageBuilder()
-                                .append("Ending the conversation now. Messages: ")
-                                .append(counter)
-                                .build();
+                        return "Ending the conversation now. Messages: " + counter;
                     } else {
                         return new MessageBuilder()
-                                .append("To end this conversation, enter \"GOODBYE\"\n")
+                                .append("To end this conversation, enter \"goodbye\"\n")
                                 .appendFormat("This is Message #%d", counter++)
                                 .build();
                     }
                 case END:
-                    return new MessageBuilder()
-                            .append("THIS CONVERSATION HAS ENDED, YOU SHOULD NOT SEE THIS")
-                            .build();
+                    return "THIS CONVERSATION HAS ENDED, YOU SHOULD NOT SEE THIS";
                 default:
                     throw new AssertionError(state.name());
             }
