@@ -15,6 +15,7 @@ public interface ConversationDispatch {
 
     Initializer DEFAULT_INIT = (components) -> Arrays.asList(
             new MentionReplyConversation(),
+            new CreateTaskConversation(components.jdaUserRepository(), components.jdaTaskRepository()),
             new DefaultFallbackConversation());
     
     FallbackConversation MISSING_FALLBACK = (msg) ->

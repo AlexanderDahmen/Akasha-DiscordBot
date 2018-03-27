@@ -1,0 +1,3 @@
+NewTask     : task
+DEADLINE    : task with a deadline
+REPEAT      : repeating task

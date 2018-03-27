@@ -45,6 +45,22 @@ public class MysqlJdaUserRepository implements JdaUserRepository {
                 JdbcSqlUtil.NO_RESULT,
                 JdaUserRepositoryException::new);
     }
+
+    @Override
+    public void deleteUser(User user) throws JdaUserRepositoryException {
+        JdbcSqlUtil.query(dataSource, JdbcSqlUtil.FunctionType.UPDATE,
+                (connection) -> {
+                    PreparedStatement stmt = connection.prepareStatement(""
+                            + "DELETE akasha_user , akasha_task"
+                            + " FROM akasha_user, akasha_task"
+                            + " WHERE akasha_user.id = akasha_task.user_id"
+                            + " AND akasha_user.id = ?");
+                    stmt.setLong(1, user.getIdLong());
+                    return stmt;
+                },
+                JdbcSqlUtil.NO_RESULT,
+                JdaUserRepositoryException::new);
+    }
     
     @Override
     public List<User> getUsers() throws JdaUserRepositoryException {

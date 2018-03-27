@@ -5,28 +5,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Value;
 
 /**
  *
  * @author Alexander
  */
-public class MessageTemplate implements
+public class MessageTemplate extends MessageResource implements
         Supplier<InputStream>,
         Function<Map<String, Object>, InputStream>
 {    
-    public static final String RESOURCE_BASE = "message";
-    public static final Language DEFAULT_LANGUAGE = Language.ENGLISH;
-    
-    private static final ConcurrentMap<LanguageResource, ResourceCache> CACHED_RESOURCES = new ConcurrentHashMap<>(32);
     
     private final Supplier<InputStream> input;
     
@@ -69,6 +60,12 @@ public class MessageTemplate implements
                 after.get());
     }
     
+    public MessageTemplate(MessageTemplate... templates) {
+        InputStream[] streams = new InputStream[templates.length];
+        for (int i = 0; i < templates.length; i++) streams[i] = templates[i].get();
+        this.input = () -> new ConcatInputStream(streams);
+    }
+    
     @Override
     public InputStream get() {
         return input.get();
@@ -88,22 +85,13 @@ public class MessageTemplate implements
         return convert(get());
     }
     
-    private Supplier<InputStream> getResourceSupplier(LanguageResource resource) {
-        ResourceCache result = CACHED_RESOURCES.get(resource);
-        if (result == null) {
-            result = new ResourceCache(resourceLocation(resource));
-            CACHED_RESOURCES.put(resource, result);
-        }
-        return result;
+    public BuildMessageTemplate build() {
+        return new BuildMessageTemplate();
     }
     
-    private String resourceLocation(LanguageResource resource) {
-        return new StringJoiner("/")
-                .add(RESOURCE_BASE)
-                .add(resource.getLanguage().getDirectory())
-                .add(resource.getResource())
-                .toString()
-                .replaceAll("//+", "/"); // Against double-slashes
+    // Shorthand for .build().set(String, Object)
+    public BuildMessageTemplate set(String variable, Object value) {
+        return new BuildMessageTemplate().set(variable, value);
     }
     
     private static String convert(InputStream stream) {
@@ -121,17 +109,21 @@ public class MessageTemplate implements
         }
     }
     
-    @AllArgsConstructor
-    public static enum Language {
-        ENGLISH("en");
+    public class BuildMessageTemplate {
+        private final Map<String, Object> variables;
+
+        public BuildMessageTemplate() {
+            this.variables = new HashMap<>();
+        }
         
-        @Getter
-        private final String directory;
-    }
-    
-    @Value
-    private static class LanguageResource {
-        Language language;
-        String resource;
+        public BuildMessageTemplate set(String variable, Object value) {
+            variables.put(variable, value);
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return MessageTemplate.this.toString(variables);
+        }
     }
 }

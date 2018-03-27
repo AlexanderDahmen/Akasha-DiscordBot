@@ -13,6 +13,8 @@ public interface JdaUserRepository {
     
     void storeUser(User user) throws JdaUserRepositoryException;
     
+    void deleteUser(User user) throws JdaUserRepositoryException;
+    
     List<User> getUsers() throws JdaUserRepositoryException;
     
     PrivateChannel getPrivateChannel(long user) throws JdaUserRepositoryException;
