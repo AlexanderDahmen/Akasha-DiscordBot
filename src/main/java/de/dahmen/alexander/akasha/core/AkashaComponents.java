@@ -8,6 +8,9 @@ import de.dahmen.alexander.akasha.core.repository.JdaUserRepository;
  * @author Alexander
  */
 public interface AkashaComponents {
+    
+    <T> T config(Class<T> clazz);
+    
     JdaTaskRepository jdaTaskRepository();
     
     JdaUserRepository jdaUserRepository();

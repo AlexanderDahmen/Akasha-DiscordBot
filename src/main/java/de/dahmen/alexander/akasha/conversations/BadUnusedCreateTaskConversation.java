@@ -1,5 +1,5 @@
 
-package de.dahmen.alexander.akasha.core.conversation.impl;
+package de.dahmen.alexander.akasha.conversations;
 
 import de.dahmen.alexander.akasha.core.conversation.Conversation;
 import de.dahmen.alexander.akasha.core.conversation.util.MessageStrings;

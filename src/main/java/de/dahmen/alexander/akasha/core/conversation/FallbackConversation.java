@@ -27,5 +27,5 @@ public interface FallbackConversation extends Conversation {
         return this::fallback;
     }
     
-    Message fallback(Message msg);
+    Object fallback(Message msg);
 }

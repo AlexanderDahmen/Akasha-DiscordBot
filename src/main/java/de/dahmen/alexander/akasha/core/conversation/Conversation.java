@@ -13,7 +13,7 @@ import net.dv8tion.jda.core.entities.Message;
  */
 public interface Conversation {
     
-    interface Instance extends Function<Message, Object> {
+    interface Instance extends Function<Message, Object>, AutoCloseable {
         /**
          * Apply a conversation response to an incoming message
          * @param message Message being sent into the conversation
@@ -31,6 +31,14 @@ public interface Conversation {
          * @return True if the conversation is over and should stop, False if it should keep going
          */
         default boolean isFinished() { return true; }
+        
+        /**
+         * Close all resources this conversation instance has acquired.
+         * By default, no resources have to be freed, and this method does nothing.
+         * @throws Exception If any resource could not be closed correctly
+         */
+        @Override
+        default void close() throws Exception { };
     }
     
     /**

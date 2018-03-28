@@ -1,9 +1,8 @@
 
-package de.dahmen.alexander.akasha.core.conversation.impl;
+package de.dahmen.alexander.akasha.conversations;
 
 import de.dahmen.alexander.akasha.core.conversation.Conversation;
 import de.dahmen.alexander.akasha.core.conversation.util.MessageTemplate;
-import de.dahmen.alexander.akasha.util.MapBuilder;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Message;
 
@@ -24,13 +23,13 @@ public class MentionReplyConversation implements Conversation {
         return (!message.isFromType(ChannelType.PRIVATE)) &&
                 (message.isMentioned(
                         message.getJDA().getSelfUser(),
-                        Message.MentionType.ROLE, Message.MentionType.USER));
+                        Message.MentionType.ROLE,
+                        Message.MentionType.USER));
     }
     
     @Override
     public Instance instance() {
-        return (msg) -> replyTemplate.toString(new MapBuilder<String, Object>()
-                .put("user", msg.getAuthor().getAsMention())
-                .build());
+        return (msg) -> replyTemplate
+                .set("user", msg.getAuthor().getAsMention());
     }
 }

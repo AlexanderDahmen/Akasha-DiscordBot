@@ -147,16 +147,9 @@ public class DefaultConversationDispatch implements ConversationDispatch {
     }
 
     private void safeClose(Conversation.Instance instance) {
-        if (instance instanceof AutoCloseable) {
-            try {
-                ((AutoCloseable) instance).close();
-            }
-            catch (Exception ex) {
-                log.warn(
-                        "Could not close ConversationInstance: "
-                                + instance.getClass().getName(),
-                        ex);
-            }
+        try { instance.close(); }
+        catch (Exception ex) {
+            log.warn("Could not close Conversation.Instance: " + instance.getClass().getName(), ex);
         }
     }
 }

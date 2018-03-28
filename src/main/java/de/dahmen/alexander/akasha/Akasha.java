@@ -51,11 +51,11 @@ public class Akasha {
         
         jda = createJDA();
         components = new AkashaComponentsImpl(
+                config,
                 new MysqlJdaTaskRepository(database),
                 new MysqlJdaUserRepository(jda, database));
         
         conversations = new DefaultConversationDispatch(components);
-        
         jda.addEventListener(new AkashaListener(conversations));
         
         Runtime.getRuntime().addShutdownHook(new Thread(Akasha::shutdown));
@@ -107,9 +107,11 @@ public class Akasha {
     
     @AllArgsConstructor
     private static class AkashaComponentsImpl implements AkashaComponents {
+        private final Config config;
         private final JdaTaskRepository jtr;
         private final JdaUserRepository jur;
-        
+
+        @Override public <T> T config(Class<T> clazz) { return config.get(clazz); }
         @Override public JdaTaskRepository jdaTaskRepository() { return jtr; }
         @Override public JdaUserRepository jdaUserRepository() { return jur; }
     }
