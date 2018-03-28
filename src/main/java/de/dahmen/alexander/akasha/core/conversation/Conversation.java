@@ -1,6 +1,5 @@
 package de.dahmen.alexander.akasha.core.conversation;
 
-import java.util.Queue;
 import java.util.function.Function;
 import net.dv8tion.jda.core.entities.Message;
 

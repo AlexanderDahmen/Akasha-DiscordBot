@@ -28,7 +28,7 @@ public class DefaultConversationDispatch implements ConversationDispatch {
     private final List<Conversation> conversations;
     private final Conversation fallbackConversation;
     private final ConcurrentMap<Long, Conversation.Instance> activeConversations;
-
+    
     public DefaultConversationDispatch(AkashaComponents components) {
         this(components, DEFAULT_INIT);
     }
@@ -62,21 +62,14 @@ public class DefaultConversationDispatch implements ConversationDispatch {
         // Continue an active conversation, or create a new conversation instance
         final Conversation.Instance active = activeConversations.get(author);
         final Conversation.Instance instance;
-        final boolean wasActive;
         
         if (active == null) {
+            // Instantiate conversation and add to active conversations
             instance = instantiateConversation(message);
-            
-            // If conversation is not already finished,
-            // add if to the active conversations after instantiation
-            final boolean alreadyFinished = instance.isFinished();
-            wasActive = !alreadyFinished;
-            if (!alreadyFinished)
-                activeConversations.put(author, instance);
+            activeConversations.put(author, instance);
         } else {
             // If an active conversation exists, continue using it
             instance = active;
-            wasActive = true;
         }
         
         // Apply conversation and send back response (if present)
@@ -85,8 +78,10 @@ public class DefaultConversationDispatch implements ConversationDispatch {
         
         // If conversation was in active conversations map and is now finished,
         // remove it from the active conservations
-        if (wasActive && instance.isFinished())
+        if (instance.isFinished()) {
             activeConversations.remove(author);
+            safeClose(instance);
+        }
     }
     
     private Conversation.Instance instantiateConversation(Message message) {
@@ -149,5 +144,19 @@ public class DefaultConversationDispatch implements ConversationDispatch {
     
     private void onMessageSendFailed(Throwable error) {
         log.error("Error sending Message: " + error.getMessage(), error);
+    }
+
+    private void safeClose(Conversation.Instance instance) {
+        if (instance instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) instance).close();
+            }
+            catch (Exception ex) {
+                log.warn(
+                        "Could not close ConversationInstance: "
+                                + instance.getClass().getName(),
+                        ex);
+            }
+        }
     }
 }
