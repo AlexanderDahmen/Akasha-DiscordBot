@@ -28,8 +28,9 @@ public class TestVariableConversation implements Conversation {
         return (message) -> {
             String[] split = message.getContentRaw().split("\\s+", 2);
             String key = (split.length < 2) ? null : split[1];
-            return multi.get(key).set("t", "Template").set("temmie", "hOi");
+            return multi.get(key)
+                    .set("t", "Template")
+                    .set("temmie", "hOi");
         };
     }
-
 }

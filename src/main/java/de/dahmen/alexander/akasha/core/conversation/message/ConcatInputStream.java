@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Deque;
 
 /**
- *
+ * InputStream concatenating a queue of underlying InputStreams
  * @author Alexander
  */
 public class ConcatInputStream extends InputStream {

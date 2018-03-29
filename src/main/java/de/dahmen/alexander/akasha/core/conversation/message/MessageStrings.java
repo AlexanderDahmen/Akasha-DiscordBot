@@ -7,33 +7,70 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- *
+ * Map for Key-Value pairs parsed from a resource file.<br>
+ * The format of Strings resource files is:
+ * <blockquote><pre>
+ * Key1: Value1
+ * Key2: Value2
+ * [...]
+ * </pre></blockquote>
+ * Both keys and values are <em>trimmed</em> when parsed.
+ * 
  * @author Alexander
  */
-public class MessageStrings extends MessageResource {
+public class MessageStrings extends AbstractMap<String, String> {
     
     private final Map<String, String> strings;
     
     public MessageStrings(String resource) {
-        this(DEFAULT_LANGUAGE, resource);
+        this(new MessageResource(), resource);
     }
     
-    public MessageStrings(Language language, String resource) {
-        super(language);
-        this.strings = Collections.unmodifiableMap(parseStream(getResource(resource)));
+    public MessageStrings(MessageResource.Language language, String resource) {
+        this(new MessageResource(language), resource);
     }
     
-    public String get(String key) {
+    public MessageStrings(MessageResource resources, String resource) {
+        InputStream stream = resources.getResource(resource);
+        this.strings = Collections.unmodifiableMap(parseStream(stream));
+    }
+    
+    @Override
+    public String get(Object key) {
         return strings.get(key);
     }
     
-    public Map<String, String> getStrings() {
-        return strings;
+    @Override
+    public Set<Entry<String, String>> entrySet() {
+        return strings.entrySet();
+    }
+
+    @Override
+    public boolean containsKey(Object key) {
+        return strings.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return strings.containsValue(value);
+    }
+
+    @Override
+    public Set<String> keySet() {
+        return strings.keySet();
+    }
+
+    @Override
+    public Collection<String> values() {
+        return strings.values();
     }
     
     private Map<String, String> parseStream(InputStream input) {

@@ -7,7 +7,9 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
- *
+ * Buffer for storing data from an InputStream to be retrieved at a later time.
+ * This implementation uses blocks of {@code int[]} in order to be compact.
+ * The default block size is 1024.
  * @author Alexander
  */
 public class InputStreamBuffer {

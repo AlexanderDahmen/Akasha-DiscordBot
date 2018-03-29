@@ -1,6 +1,7 @@
 
 package de.dahmen.alexander.akasha.core.conversation.message;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -14,9 +15,10 @@ import lombok.Getter;
 import lombok.Value;
 
 /**
- * Helper and base class for locating Message Resources of a specified language.<br>
+ * Helper class for locating Message Resources of a specified <b>language</b>.<br>
  * The default language is {@code ENGLISH} (package "en"), the base path for
  * message resources is "message".
+ * 
  * @author Alexander
  */
 public class MessageResource {
@@ -28,6 +30,9 @@ public class MessageResource {
     protected static final ConcurrentMap<LanguageResource, Supplier<InputStream>>
             CACHED_RESOURCES = new ConcurrentHashMap<>(32);
     
+    /**
+     * Enum of all supported languages (including package directories)
+     */
     @AllArgsConstructor
     public static enum Language {
         ENGLISH ("en");
@@ -43,15 +48,27 @@ public class MessageResource {
     }
     
     protected final Language language;
-
+    
+    /**
+     * Create a MessageResource with the default language
+     */
     public MessageResource() {
         this(DEFAULT_LANGUAGE);
     }
     
+    /**
+     * Create a MessageResource of a specified language
+     * @param language Language of the resource files to be loaded
+     */
     public MessageResource(Language language) {
         this.language = language;
     }
     
+    /**
+     * Get an InputStream of the resource represented by this instance
+     * @param resource Resource to load from "message/{language}/{resource}"
+     * @return New InputStream containing the resource
+     */
     public final InputStream getResource(String resource) {
         return getResourceSupplier(resource).get();
     }
@@ -86,6 +103,15 @@ public class MessageResource {
     }
     
     protected Supplier<InputStream> load(String location) {
-        return new ResourceCache(location);
+        try { return new ResourceCache(location); }
+        catch (FileNotFoundException ex) {
+            throw new ResourceNotFoundException(ex.getMessage());
+        }
+    }
+    
+    public static class ResourceNotFoundException extends RuntimeException {
+        public ResourceNotFoundException(String resource) {
+            super("Resource not found: " + resource);
+        }
     }
 }

@@ -11,3 +11,15 @@ Right here!
 
 [Third]
 ${temmie}
+
+[Thief]
+I'm gonna steal temmie ...
+$$ Third $$
+
+Mwuharhaarrr!! >:]
+
+
+And I'm gonna steal something that doesn't exist: 
+$$ doesn't exist $$
+
+$$really$$
