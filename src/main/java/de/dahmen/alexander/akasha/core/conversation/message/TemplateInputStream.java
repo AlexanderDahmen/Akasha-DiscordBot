@@ -10,7 +10,7 @@ import java.util.StringJoiner;
  *
  * @author Alexander
  */
-public class VariableReplacingInputStream extends InputStream {
+public class TemplateInputStream extends InputStream {
     private final static int DOLLAR_CODE =  '$';    // $ -> Variable
     private final static int HASH_CODE =    '#';    // # -> Include
     private final static int OPEN_CODE =    '{';    // { -> Start identifier
@@ -22,14 +22,14 @@ public class VariableReplacingInputStream extends InputStream {
     private final MessageResource includeResources;
     private final InputStreamBuffer readAheadBuffer;
     
-    public VariableReplacingInputStream(
+    public TemplateInputStream(
             InputStream delegate,
             Map<String, Object> variables)
     {
         this(delegate, variables, MessageResource.DEFAULT_LANGUAGE);
     }
     
-    public VariableReplacingInputStream(
+    public TemplateInputStream(
             InputStream delegate,
             Map<String, Object> variables,
             MessageResource.Language includeLanguage)
@@ -37,7 +37,7 @@ public class VariableReplacingInputStream extends InputStream {
         this(delegate, variables, new MessageResource(includeLanguage));
     }
     
-    public VariableReplacingInputStream(
+    public TemplateInputStream(
             InputStream delegate,
             Map<String, Object> variables,
             MessageResource includeResource)
@@ -96,7 +96,7 @@ public class VariableReplacingInputStream extends InputStream {
                     try {
                         // Load resource into sub VariableReplacingInputStream
                         InputStream resource = includeResources.getResource(identifier);
-                        InputStream includeStream = new VariableReplacingInputStream(
+                        InputStream includeStream = new TemplateInputStream(
                                 resource, variables, includeResources);
                         
                         // Store result of sub-stream into buffer
@@ -120,11 +120,12 @@ public class VariableReplacingInputStream extends InputStream {
                 }
             case ESCAPE_CODE:
                 // Decide what escape code this is:
-                /*      \$   => $
-                \#   => #
-                \\$  => \$
-                \\#  => \#
-                \[*] => \[*]
+                /*
+                * "\$"   => "$"
+                * "\#"   => "#"
+                * "\\$"  => "\$"
+                * "\\#"  => "\#"
+                * "\[*]" => "\[*]"
                 */
                 int afterEscape = delegate.read();
                 switch (afterEscape) {
