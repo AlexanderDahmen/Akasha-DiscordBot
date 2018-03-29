@@ -1,5 +1,5 @@
 
-package de.dahmen.alexander.akasha.core.conversation.util;
+package de.dahmen.alexander.akasha.core.conversation.message;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,9 +24,8 @@ public class MessageStrings extends MessageResource {
     }
     
     public MessageStrings(Language language, String resource) {
-        this.strings = Collections.unmodifiableMap(
-                parse(getResourceSupplier(new LanguageResource(language, resource))
-                        .get()));
+        super(language);
+        this.strings = Collections.unmodifiableMap(parseStream(getResource(resource)));
     }
     
     public String get(String key) {
@@ -37,8 +36,10 @@ public class MessageStrings extends MessageResource {
         return strings;
     }
     
-    private Map<String, String> parse(InputStream input) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
+    private Map<String, String> parseStream(InputStream input) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(input, StandardCharsets.UTF_8)))
+        {
             return reader.lines()
                     .map((l) -> l.trim())                                       // Trim lines
                     .filter((l) -> !l.isEmpty())                                // Ignore empty lines
@@ -46,14 +47,14 @@ public class MessageStrings extends MessageResource {
                     .map((s) -> (s.length == 1) ? new String[]{s[0], ""} : s)   // Value is empty if ":" is missing
                     .collect(Collectors.toMap(
                             (s) -> s[0].trim(),
-                            (s) -> parseEscapes(s[1].trim())));                 // Create Key-Value Map
+                            (s) -> parseEscapeString(s[1].trim())));            // Create Key-Value Map
         }
         catch (IOException ex) {
             throw new RuntimeException(ex);
         }
     }
     
-    private String parseEscapes(String string) {
+    private String parseEscapeString(String string) {
         StringReader input = new StringReader(string);
         StringBuilder result = new StringBuilder(string.length());
         boolean inEscape = false;

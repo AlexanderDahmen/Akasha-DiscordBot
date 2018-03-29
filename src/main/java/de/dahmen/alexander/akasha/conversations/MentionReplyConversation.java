@@ -2,7 +2,7 @@
 package de.dahmen.alexander.akasha.conversations;
 
 import de.dahmen.alexander.akasha.core.conversation.Conversation;
-import de.dahmen.alexander.akasha.core.conversation.util.MessageTemplate;
+import de.dahmen.alexander.akasha.core.conversation.message.MessageTemplate;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Message;
 

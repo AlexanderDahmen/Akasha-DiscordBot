@@ -21,6 +21,7 @@ public class ReflectionUtil {
         else if (Boolean.class.isAssignableFrom(type)) field.set(instance, Boolean.valueOf(value));
         else if (Double.class.isAssignableFrom(type)) field.set(instance, Double.valueOf(value));
         else if (Float.class.isAssignableFrom(type)) field.set(instance, Float.valueOf(value));
+        else if (Long.class.isAssignableFrom(type)) field.set(instance, Long.valueOf(value));
         else if (Class.class.isAssignableFrom(type)) field.set(instance, Class.forName(value));
 //        else if (JsonObject.class.isAssignableFrom(type)) field.set(instance, toJsonObject(value));
 //        else if (JsonArray.class.isAssignableFrom(type)) field.set(instance, toJsonArray(value));

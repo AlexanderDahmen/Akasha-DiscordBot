@@ -1,5 +1,5 @@
 
-package de.dahmen.alexander.akasha.core.conversation.util;
+package de.dahmen.alexander.akasha.core.conversation.message;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,47 +17,17 @@ import java.util.function.Supplier;
 public class MessageTemplate extends MessageResource implements
         Supplier<InputStream>,
         Function<Map<String, Object>, InputStream>
-{    
-    
+{
     private final Supplier<InputStream> input;
     
     public MessageTemplate(String resource) {
-        this(DEFAULT_LANGUAGE, resource);
+        super();
+        this.input = getResourceSupplier(resource);
     }
     
     public MessageTemplate(Language language, String resource) {
-        this.input = getResourceSupplier(new LanguageResource(language, resource));
-    }
-    
-    public MessageTemplate(MessageTemplate before, String resource) {
-        this(before, DEFAULT_LANGUAGE, resource);
-    }
-    
-    public MessageTemplate(MessageTemplate before, Language language, String resource) {
-        this.input = () -> new ConcatInputStream(
-                before.get(),
-                getResourceSupplier(new LanguageResource(language, resource)).get());
-    }
-    
-    public MessageTemplate(String resource, MessageTemplate after) {
-        this(DEFAULT_LANGUAGE, resource, after);
-    }
-    
-    public MessageTemplate(Language language, String resource, MessageTemplate after) {
-        this.input = () -> new ConcatInputStream(
-                getResourceSupplier(new LanguageResource(language, resource)).get(),
-                after.get());
-    }
-    
-    public MessageTemplate(MessageTemplate before, String resource, MessageTemplate after) {
-        this(before, DEFAULT_LANGUAGE, resource, after);
-    }
-    
-    public MessageTemplate(MessageTemplate before, Language language, String resource, MessageTemplate after) {
-        this.input = () -> new ConcatInputStream(
-                before.get(),
-                getResourceSupplier(new LanguageResource(language, resource)).get(),
-                after.get());
+        super(language);
+        this.input = getResourceSupplier(resource);
     }
     
     public MessageTemplate(MessageTemplate... templates) {

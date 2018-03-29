@@ -2,9 +2,9 @@
 package de.dahmen.alexander.akasha.conversations;
 
 import de.dahmen.alexander.akasha.core.conversation.Conversation;
-import de.dahmen.alexander.akasha.core.conversation.util.MessageStrings;
-import de.dahmen.alexander.akasha.core.conversation.util.MessageTemplate;
-import de.dahmen.alexander.akasha.core.conversation.util.StringUtil;
+import de.dahmen.alexander.akasha.core.conversation.message.MessageStrings;
+import de.dahmen.alexander.akasha.core.conversation.message.MessageTemplate;
+import de.dahmen.alexander.akasha.core.conversation.message.StringUtil;
 import de.dahmen.alexander.akasha.core.entity.Task;
 import de.dahmen.alexander.akasha.core.repository.JdaTaskRepository;
 import de.dahmen.alexander.akasha.core.repository.JdaUserRepository;
@@ -43,7 +43,7 @@ public class BadUnusedCreateTaskConversation implements Conversation {
         this.initialMT = new MessageTemplate("create_task/Initial");
         this.askTypeMT = new MessageTemplate("create_task/AskType");
         this.initialAskTypeMT = new MessageTemplate(initialMT, askTypeMT);
-        this.unknownTaskTypeMT = new MessageTemplate("create_task/UnknownTaskType", askTypeMT);
+        this.unknownTaskTypeMT = new MessageTemplate("create_task/UnknownTaskType");
         this.createTaskStrings = new MessageStrings("create_task/CreateTaskStrings");
     }
     

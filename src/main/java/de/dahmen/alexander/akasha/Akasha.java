@@ -1,8 +1,7 @@
 
 package de.dahmen.alexander.akasha;
 
-import de.dahmen.alexander.akasha.config.DatabaseConfig;
-import de.dahmen.alexander.akasha.config.DiscordConfig;
+import de.dahmen.alexander.akasha.config.*;
 import de.dahmen.alexander.akasha.config.lib.Config;
 import de.dahmen.alexander.akasha.core.conversation.DefaultConversationDispatch;
 import de.dahmen.alexander.akasha.core.repository.JdaTaskRepository;
@@ -36,7 +35,8 @@ public class Akasha {
     private static final String CONFIG_FILE = "config.properties"; // This file is in .gitignore
     private static final List<Class<?>> CONFIG_CLASSES = Collections.unmodifiableList(Arrays.asList(
             DatabaseConfig.class,
-            DiscordConfig.class));
+            DiscordConfig.class,
+            ConversationConfig.class));
     
     private static JDA jda = null;
     private static Config config = null;

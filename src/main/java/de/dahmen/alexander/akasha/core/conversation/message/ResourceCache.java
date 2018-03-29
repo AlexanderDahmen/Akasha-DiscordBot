@@ -1,5 +1,5 @@
 
-package de.dahmen.alexander.akasha.core.conversation.util;
+package de.dahmen.alexander.akasha.core.conversation.message;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -21,8 +21,8 @@ public class ResourceCache implements Supplier<InputStream> {
         this.content = loadResource(resource, DEFAULT_BUFFER_SIZE);
     }
     
-    public ResourceCache(String resource, int bufferSize) {
-        this.content = loadResource(resource, bufferSize);
+    public ResourceCache(String resource, int readBufferSize) {
+        this.content = loadResource(resource, readBufferSize);
     }
     
     @Override
@@ -30,14 +30,14 @@ public class ResourceCache implements Supplier<InputStream> {
         return new ByteArrayInputStream(content);
     }
     
-    private byte[] loadResource(String resource, int bufferSize) {
+    private byte[] loadResource(String resource, int readBufferSize) {
         InputStream is = CL.getResourceAsStream(resource);
         if (is == null)
-            throw new RuntimeException("Resource not found: " + resource);
+            throw new ResourceNotFoundException("Resource not found: " + resource);
         
         int read;
-        byte[] buffer = new byte[bufferSize];
-        ByteArrayOutputStream os = new ByteArrayOutputStream(bufferSize);
+        byte[] buffer = new byte[readBufferSize];
+        ByteArrayOutputStream os = new ByteArrayOutputStream(readBufferSize);
         
         try {
             while ((read = is.read(buffer, 0, buffer.length)) != -1) {
@@ -50,5 +50,9 @@ public class ResourceCache implements Supplier<InputStream> {
         }
         
         return os.toByteArray();
+    }
+    
+    public static class ResourceNotFoundException extends RuntimeException {
+        public ResourceNotFoundException(String msg) { super(msg); }
     }
 }

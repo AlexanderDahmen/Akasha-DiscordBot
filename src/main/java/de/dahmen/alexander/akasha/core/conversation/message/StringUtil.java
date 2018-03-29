@@ -1,5 +1,5 @@
 
-package de.dahmen.alexander.akasha.core.conversation.util;
+package de.dahmen.alexander.akasha.core.conversation.message;
 
 /**
  *

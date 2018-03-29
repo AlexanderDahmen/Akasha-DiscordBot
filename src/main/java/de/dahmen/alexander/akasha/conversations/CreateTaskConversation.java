@@ -2,7 +2,12 @@
 package de.dahmen.alexander.akasha.conversations;
 
 import de.dahmen.alexander.akasha.config.ConversationConfig;
+import de.dahmen.alexander.akasha.core.AkashaComponents;
 import de.dahmen.alexander.akasha.core.conversation.Conversation;
+import de.dahmen.alexander.akasha.core.entity.Task;
+import de.dahmen.alexander.akasha.core.entity.TaskStatus;
+import de.dahmen.alexander.akasha.core.repository.JdaTaskRepository;
+import de.dahmen.alexander.akasha.core.repository.JdaUserRepository;
 import net.dv8tion.jda.core.entities.Message;
 
 /**
@@ -12,9 +17,13 @@ import net.dv8tion.jda.core.entities.Message;
 public class CreateTaskConversation implements Conversation {
     
     private final ConversationConfig config;
-
-    public CreateTaskConversation(ConversationConfig config) {
-        this.config = config;
+    private final JdaUserRepository users;
+    private final JdaTaskRepository tasks;
+    
+    public CreateTaskConversation(AkashaComponents components) {
+        this.config = components.config(ConversationConfig.class);
+        this.users = components.jdaUserRepository();
+        this.tasks = components.jdaTaskRepository();
     }
     
     @Override
@@ -28,13 +37,17 @@ public class CreateTaskConversation implements Conversation {
     }
     
     private class CreateTaskInstance extends GeneratorConversationInstance {
-
+        
+        boolean success = false;
+        
         public CreateTaskInstance() {
             super(config);
         }
         
         @Override
         protected void run() throws InterruptedException {
+            Task.Type type = getType();
+            
             boolean done = false;
             boolean first = true;
             String content = "";
@@ -58,7 +71,11 @@ public class CreateTaskConversation implements Conversation {
         
         @Override
         protected Object exit() {
-            return "Goodbye!";
+            return "done. ";
+        }
+
+        private Task.Type getType() {
+            return null;
         }
     }
 }
