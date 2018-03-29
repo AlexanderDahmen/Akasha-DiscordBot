@@ -1,8 +1,7 @@
 
-package de.dahmen.alexander.akasha.conversations;
+package de.dahmen.alexander.akasha.core.conversation;
 
 import de.dahmen.alexander.akasha.config.ConversationConfig;
-import de.dahmen.alexander.akasha.core.conversation.Conversation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +28,7 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
     
     private boolean hasFinished;
     private boolean nextResponseAvailable;
-    private RuntimeException raisedException;
+    private Exception raisedException;
 
     public GeneratorConversationInstance(ConversationConfig config) {
         this(config.getTimeoutMilliseconds());
@@ -55,7 +54,7 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
         if (waitForNext()) {
             nextResponseAvailable = false;
         } else {
-            Optional.ofNullable(exit())
+            Optional.ofNullable(exitResponse())
                     .ifPresent(responseBuffer::add);
         }
         return bufferToResponseObject();
@@ -92,7 +91,7 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
      * @return Last response after {@code run()} exits
      * @see GeneratorConversationInstance#run() 
      */
-    protected abstract Object exit();
+    protected abstract Object exitResponse();
     
     /**
      * The current incoming message of the active conversation
@@ -191,7 +190,9 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
         }
         
         if (raisedException != null)
-            throw raisedException;
+            throw new RuntimeException(
+                    raisedException.getMessage(),
+                    raisedException);
         
         return !hasFinished;
     }
@@ -205,7 +206,7 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
             responseBuffer.add("[[TIMEOUT]]");
             /* Will be handled in run() */
         }
-        catch (RuntimeException ex) {
+        catch (Exception ex) {
             raisedException = ex;
         }
         hasFinished = true;
@@ -222,8 +223,7 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
         
         public synchronized void await(long timeout) throws InterruptedException {
             try {
-                if (isSet) return;
-                wait(timeout);
+                if (!isSet) wait(timeout);
             }
             finally {
                 isSet = false;

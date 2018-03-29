@@ -8,7 +8,7 @@ import java.sql.SQLException;
  *
  * @author Alexander
  */
-public abstract class RepositoryException extends Exception {
+public abstract class RepositoryException extends RuntimeException {
     
     private final boolean internal;
     

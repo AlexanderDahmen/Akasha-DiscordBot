@@ -37,6 +37,8 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
     private final Supplier<InputStream> inputSupplier;
     private final Map<String, Object> presetVariables;
     
+    private String lazyToString = null;
+    
     /**
      * Load a MessageTemplate from a specified message resource in the default language
      * @param resource Resource to load
@@ -163,7 +165,9 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
      */
     @Override
     public String toString() {
-        return convert(get());
+        return (lazyToString == null) ?
+                (lazyToString = convert(get())) :
+                lazyToString;
     }
     
     /**

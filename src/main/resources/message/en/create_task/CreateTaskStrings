@@ -1,3 +1,5 @@
 NewTask     : task
 DEADLINE    : task with a deadline
 REPEAT      : repeating task
+AnswerYes   : ^\\s*Y(es)?(\\s+.*)?$
+AnswerNo    : ^\\s*N(o)?(\\s+.*)?$

@@ -15,7 +15,7 @@ public class MentionReplyConversation implements Conversation {
     private final MessageTemplate replyTemplate;
 
     public MentionReplyConversation() {
-        this.replyTemplate = new MessageTemplate("PublicMentionReply");
+        this.replyTemplate = new MessageTemplate("mention/PublicMentionReply");
     }
     
     @Override
@@ -29,7 +29,6 @@ public class MentionReplyConversation implements Conversation {
     
     @Override
     public Instance instance() {
-        return (msg) -> replyTemplate
-                .set("user", msg.getAuthor().getAsMention());
+        return (msg) -> replyTemplate.set("user", msg.getAuthor().getAsMention());
     }
 }

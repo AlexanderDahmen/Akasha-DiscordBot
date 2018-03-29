@@ -157,6 +157,50 @@ public class JdbcSqlUtil {
                 null;
     }
     
+    public static StatementFunction statement(
+            String sql, Object parameter)
+    {
+        return (connection) -> {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setObject(1, parameter);
+            return stmt;
+        };
+    }
+    
+    public static StatementFunction statement(
+            String sql,
+            Object parameter1, Object parameter2)
+    {
+        return (connection) -> {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setObject(1, parameter1);
+            stmt.setObject(2, parameter2);
+            return stmt;
+        };
+    }
+    
+    public static StatementFunction statement(
+            String sql,
+            Object parameter1, Object parameter2, Object parameter3)
+    {
+        return (connection) -> {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setObject(1, parameter1);
+            stmt.setObject(2, parameter2);
+            stmt.setObject(3, parameter3);
+            return stmt;
+        };
+    }
+    
+    public static StatementFunction statement(String sql, Object... parameters) {
+        return (connection) -> {
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            for (int i = 0; i < parameters.length; i++)
+                stmt.setObject(i + 1, parameters[i]);
+            return stmt;
+        };
+    }
+    
     private JdbcSqlUtil() { }
 }
 

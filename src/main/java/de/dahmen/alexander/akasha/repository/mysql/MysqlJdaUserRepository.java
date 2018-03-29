@@ -36,10 +36,15 @@ public class MysqlJdaUserRepository implements JdaUserRepository {
                     PreparedStatement stmt = connection.prepareStatement(""
                             + "INSERT INTO akasha_user"
                             + " (id, user_name, channel_id)"
-                            + " VALUES (?, ?, ?)");
+                            + " VALUES (?, ?, ?)"
+                            + " ON DUPLICATE KEY UPDATE"
+                            + " user_name = ?,"
+                            + " channel_id = ?");
                     stmt.setLong(1, user.getIdLong());
                     stmt.setString(2, user.getName());
                     stmt.setLong(3, channelId);
+                    stmt.setString(4, user.getName());
+                    stmt.setLong(5, channelId);
                     return stmt;
                 },
                 JdbcSqlUtil.NO_RESULT,
@@ -51,7 +56,7 @@ public class MysqlJdaUserRepository implements JdaUserRepository {
         JdbcSqlUtil.query(dataSource, JdbcSqlUtil.FunctionType.UPDATE,
                 (connection) -> {
                     PreparedStatement stmt = connection.prepareStatement(""
-                            + "DELETE akasha_user , akasha_task"
+                            + "DELETE akasha_user, akasha_task"
                             + " FROM akasha_user, akasha_task"
                             + " WHERE akasha_user.id = akasha_task.user_id"
                             + " AND akasha_user.id = ?");

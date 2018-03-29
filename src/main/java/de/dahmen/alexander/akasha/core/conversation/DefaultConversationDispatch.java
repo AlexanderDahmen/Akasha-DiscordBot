@@ -1,12 +1,11 @@
 
 package de.dahmen.alexander.akasha.core.conversation;
 
-import de.dahmen.alexander.akasha.core.AkashaComponents;
 import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Queue;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -28,14 +27,6 @@ public class DefaultConversationDispatch implements ConversationDispatch {
     private final List<Conversation> conversations;
     private final Conversation fallbackConversation;
     private final ConcurrentMap<Long, Conversation.Instance> activeConversations;
-    
-    public DefaultConversationDispatch(AkashaComponents components) {
-        this(components, DEFAULT_INIT);
-    }
-    
-    public DefaultConversationDispatch(AkashaComponents components, Initializer init) {
-        this(init.init(components));
-    }
     
     public DefaultConversationDispatch(List<Conversation> conversations) {
         this.conversations = Collections.unmodifiableList(conversations.stream()
@@ -73,8 +64,22 @@ public class DefaultConversationDispatch implements ConversationDispatch {
         }
         
         // Apply conversation and send back response (if present)
-        Optional.ofNullable(instance.apply(message))
-                .ifPresent((response) -> sendResponse(channel, response));
+        try {
+            Object response = instance.apply(message);
+            if (response != null) {
+                sendResponse(channel, response);
+            }
+        }
+        catch (Exception ex) {
+            log.error("Response Exception: " + ex.getMessage(), ex);
+            
+            Throwable cause = ex.getCause();
+            Throwable thr = (cause == null) ? ex : cause;
+            sendResponse(channel, new StringBuilder()
+                    .append("[[ERROR]]\n")
+                    .append(thr.getClass().getName())
+                    .append(" :: ").append(thr.getMessage()));
+        }
         
         // If conversation was in active conversations map and is now finished,
         // remove it from the active conservations

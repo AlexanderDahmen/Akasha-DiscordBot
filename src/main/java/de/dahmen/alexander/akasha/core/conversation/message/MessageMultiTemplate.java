@@ -46,8 +46,8 @@ import java.util.regex.Pattern;
  */
 public class MessageMultiTemplate {
     
-    private static final Pattern SECTION = Pattern.compile("\\[(.*?)\\]", Pattern.CASE_INSENSITIVE);
-    private static final Pattern INCLUDE = Pattern.compile("\\$\\$\\s*(.*?)\\s*\\$\\$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SECTION = Pattern.compile("\\[(.*?)\\]");
+    private static final Pattern INCLUDE = Pattern.compile("\\$\\$\\s*(.*?)\\s*\\$\\$");
     
     private final Map<String, MessageTemplate> templates;
     
@@ -119,7 +119,6 @@ public class MessageMultiTemplate {
         
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
             String section = null;
-            boolean emptyLine = false;
             ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
             
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {
@@ -136,12 +135,7 @@ public class MessageMultiTemplate {
                     
                     // Start new header line
                     section = sectionRegex.group(1).trim();
-                    emptyLine = false;
                 } else {
-                    // Append a newline if a blank line was previously input
-                    if (emptyLine)
-                        out.write('\n');
-                    
                     // Check for include lines
                     Matcher includeRegex = INCLUDE.matcher(line);
                     if (includeRegex.matches()) {
@@ -158,13 +152,7 @@ public class MessageMultiTemplate {
                         // Append body line
                         out.write(line.getBytes(MessageResource.CHARSET));
                     }
-                    
-                    // Append a blank if last line was not empty
-                    if (!emptyLine)
-                        out.write(' ');
-
-                    // Update wether or not this line was empty
-                    emptyLine = line.trim().isEmpty();
+                    out.write('\n');
                 }
             }
             

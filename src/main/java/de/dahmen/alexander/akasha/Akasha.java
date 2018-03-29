@@ -3,6 +3,10 @@ package de.dahmen.alexander.akasha;
 
 import de.dahmen.alexander.akasha.config.*;
 import de.dahmen.alexander.akasha.config.lib.Config;
+import de.dahmen.alexander.akasha.conversations.CreateTaskConversation;
+import de.dahmen.alexander.akasha.conversations.DefaultFallbackConversation;
+import de.dahmen.alexander.akasha.conversations.MentionReplyConversation;
+import de.dahmen.alexander.akasha.core.conversation.Conversation;
 import de.dahmen.alexander.akasha.core.conversation.DefaultConversationDispatch;
 import de.dahmen.alexander.akasha.core.repository.JdaTaskRepository;
 import de.dahmen.alexander.akasha.core.repository.JdaUserRepository;
@@ -20,7 +24,6 @@ import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.OnlineStatus;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.flywaydb.core.Flyway;
-import de.dahmen.alexander.akasha.core.AkashaComponents;
 import de.dahmen.alexander.akasha.core.conversation.ConversationDispatch;
 import de.dahmen.alexander.akasha.core.listener.AkashaListener;
 import de.dahmen.alexander.akasha.core.listener.LifecycleListener;
@@ -38,44 +41,38 @@ public class Akasha {
             DiscordConfig.class,
             ConversationConfig.class));
     
-    private static JDA jda = null;
-    private static Config config = null;
-    private static DataSource database = null;
-    private static AkashaComponents components = null;
-    private static ConversationDispatch conversations = null;
-    
     public static void main(String[] args) throws Exception {
-        config = Config.load(CONFIG_FILE, CONFIG_CLASSES);
-        database = createDataSource();
+        Config config = Config.load(CONFIG_FILE, CONFIG_CLASSES);
+        DataSource database = createDataSource(config.get(DatabaseConfig.class));
         migrate(database);
         
-        jda = createJDA();
-        components = new AkashaComponentsImpl(
-                config,
-                new MysqlJdaTaskRepository(database),
-                new MysqlJdaUserRepository(jda, database));
+        JDA jda = createJDA(config.get(DiscordConfig.class).getToken());
+        JdaTaskRepository taskRepository = new MysqlJdaTaskRepository(database);
+        JdaUserRepository userRepository = new MysqlJdaUserRepository(jda, database);
         
-        conversations = new DefaultConversationDispatch(components);
-        jda.addEventListener(new AkashaListener(conversations));
+        ConversationConfig cc = config.get(ConversationConfig.class);
+        List<Conversation> conversations = Collections.unmodifiableList(Arrays.asList(
+                new MentionReplyConversation(),
+                new CreateTaskConversation(cc, userRepository, taskRepository),
+                new DefaultFallbackConversation()));
         
-        Runtime.getRuntime().addShutdownHook(new Thread(Akasha::shutdown));
+        ConversationDispatch dispatch = new DefaultConversationDispatch(conversations);
+        jda.addEventListener(new AkashaListener(dispatch));
+        
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            safeClose(database);
+            jda.shutdown();
+        }));
     }
     
-    public static void shutdown() {
-        safeClose(database);
-        jda.shutdown();
-    }
-    
-    private static DataSource createDataSource() {
-        DatabaseConfig dc = config.get(DatabaseConfig.class);
+    private static DataSource createDataSource(DatabaseConfig config) {
         BasicDataSource ds = new BasicDataSource();
-        ds.setDriverClassName(dc.getDriver());
-        ds.setUsername(dc.getUsername());
-        ds.setPassword(dc.getPassword());
-        ds.setUrl(dc.getUrl() +
-                ((dc.getOptions() == null || dc.getOptions().isEmpty()) ?
-                        "" :
-                        "?".concat(dc.getOptions())));
+        ds.setDriverClassName(config.getDriver());
+        ds.setUsername(config.getUsername());
+        ds.setPassword(config.getPassword());
+        ds.setUrl(config.getUrl() +
+                ((config.getOptions() == null || config.getOptions().isEmpty()) ?
+                        "" : "?".concat(config.getOptions())));
         return ds;
     }
     
@@ -85,9 +82,9 @@ public class Akasha {
         flyway.migrate();
     }
     
-    private static JDA createJDA() throws LoginException, InterruptedException {
+    private static JDA createJDA(String token) throws LoginException, InterruptedException {
         return new JDABuilder(AccountType.BOT)
-                .setToken(config.get(DiscordConfig.class).getToken())
+                .setToken(token)
                 .setStatus(OnlineStatus.ONLINE)
                 .addEventListener(new LifecycleListener())
                 .setAutoReconnect(true)
@@ -103,17 +100,6 @@ public class Akasha {
         catch (Exception ex) {
             log.warn("Shutdown Error: " + ex.getMessage(), ex);
         }
-    }
-    
-    @AllArgsConstructor
-    private static class AkashaComponentsImpl implements AkashaComponents {
-        private final Config config;
-        private final JdaTaskRepository jtr;
-        private final JdaUserRepository jur;
-
-        @Override public <T> T config(Class<T> clazz) { return config.get(clazz); }
-        @Override public JdaTaskRepository jdaTaskRepository() { return jtr; }
-        @Override public JdaUserRepository jdaUserRepository() { return jur; }
     }
     
     private Akasha() { }

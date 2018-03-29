@@ -13,9 +13,9 @@ public interface JdaTaskRepository {
     
     long storeTask(User user, Task task) throws JdaTaskRepositoryException;
     
-    boolean updateTask(long id, Task update) throws JdaTaskRepositoryException;
+    boolean updateTask(long taskId, Task update) throws JdaTaskRepositoryException;
     
-    boolean taskNameExists(String taskName) throws JdaTaskRepositoryException;
+    boolean taskNameExists(User user, String taskName) throws JdaTaskRepositoryException;
     
     Long getIdByName(User user, String taskName) throws JdaTaskRepositoryException;
     

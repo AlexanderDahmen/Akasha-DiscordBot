@@ -54,26 +54,28 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
                             + " deadline = ?,"
                             + " start_time = ?"
                             + " WHERE id = ?");
-                    stmt.setString(1, update.getName());
-                    stmt.setInt(2, update.getType().ordinal());
-                    stmt.setInt(3, update.getStatus().ordinal());
-                    stmt.setInt(4, update.getPriority().ordinal());
-                    stmt.setString(6, update.getDescription());
+                    
+                    stmt.setString  (1, update.getName());
+                    stmt.setInt     (2, update.getType().ordinal());
+                    stmt.setInt     (3, update.getStatus().ordinal());
+                    stmt.setInt     (4, update.getPriority().ordinal());
+                    stmt.setString  (6, update.getDescription());
                     switch (update.getType()) {
                         case REPEAT:
-                            stmt.setInt(5, ((RepeatTask)update).getRepeatSeconds());
-                            stmt.setNull(7, java.sql.Types.TIMESTAMP);
-                            stmt.setTime(8, ((RepeatTask)update).getStartTime());
+                            stmt.setInt         (5, ((RepeatTask)update).getRepeatSeconds());
+                            stmt.setNull        (7, java.sql.Types.TIMESTAMP);
+                            stmt.setTime        (8, ((RepeatTask)update).getStartTime());
                             break;
                         case DEADLINE:
-                            stmt.setInt(5, ((DeadlineTask)update).getRemindSeconds());
-                            stmt.setTimestamp(7, ((DeadlineTask)update).getDeadline());
-                            stmt.setNull(8, java.sql.Types.TIME);
+                            stmt.setInt         (5, ((DeadlineTask)update).getRemindSeconds());
+                            stmt.setTimestamp   (7, ((DeadlineTask)update).getDeadline());
+                            stmt.setNull        (8, java.sql.Types.TIME);
                             break;
                         default:
                             throw new AssertionError(update.getType().name());
                     }
                     stmt.setLong(9, id);
+                    
                     return stmt;
                 },
                 JdbcSqlUtil.UPDATE_COUNT,
@@ -91,32 +93,29 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
     @Override
     public Long getIdByName(User user, String taskName) throws JdaTaskRepositoryException {
         return JdbcSqlUtil.query(dataSource, JdbcSqlUtil.FunctionType.QUERY,
-                (connection) -> {
-                    PreparedStatement stmt = connection.prepareStatement(""
-                            + "SELECT id"
-                            + " FROM akasha_task"
-                            + " WHERE user_id = ?"
-                            + " AND task_name = ?");
-                    stmt.setLong(1, user.getIdLong());
-                    stmt.setString(2, taskName);
-                    return stmt;
-                },
+                JdbcSqlUtil.statement(""
+                        + "SELECT id"
+                        + " FROM akasha_task"
+                        + " WHERE user_id = ?"
+                        + " AND task_name = ?"
+                        + " LIMIT 1",
+                        user.getIdLong(),
+                        taskName),
                 (rset) -> (rset.next()) ? rset.getLong(1) : null,
                 JdaTaskRepositoryException::new);
     }
     
     @Override
-    public boolean taskNameExists(String taskName) throws JdaTaskRepositoryException {
+    public boolean taskNameExists(User user, String taskName) throws JdaTaskRepositoryException {
         return JdbcSqlUtil.query(dataSource, JdbcSqlUtil.FunctionType.QUERY,
-                (connection) -> {
-                    PreparedStatement stmt = connection.prepareStatement(""
-                            + "SELECT 1"
-                            + " FROM akasha_task"
-                            + " WHERE task_name = ?"
-                            + " LIMIT 1");
-                    stmt.setString(1, taskName);
-                    return stmt;
-                },
+                JdbcSqlUtil.statement(""
+                        + "SELECT 1"
+                        + " FROM akasha_task"
+                        + " WHERE user_id = ?"
+                        + " AND task_name = ?"
+                        + " LIMIT 1",
+                        user.getIdLong(),
+                        taskName),
                 JdbcSqlUtil.RESULTSET_HAS_NEXT,
                 JdaTaskRepositoryException::new);
     }
@@ -134,36 +133,31 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
     @Override
     public List<Task> getTasks(User user) throws JdaTaskRepositoryException {
         return JdbcSqlUtil.query(dataSource, JdbcSqlUtil.FunctionType.QUERY,
-                (connection) -> {
-                    PreparedStatement stmt = connection.prepareStatement(""
-                            + "SELECT"
-                            + " task_name, task_type, task_status, task_priority,"
-                            + " period_seconds, description, deadline, start_time"
-                            + " FROM akasha_task"
-                            + " WHERE user_id = ?");
-                    stmt.setLong(1, user.getIdLong());
-                    return stmt;
-                },
+                JdbcSqlUtil.statement(""
+                        + "SELECT"
+                        + " task_name, task_type, task_status, task_priority,"
+                        + " period_seconds, description, deadline, start_time"
+                        + " FROM akasha_task"
+                        + " WHERE user_id = ?",
+                        user.getIdLong()),
                 this::resultSetToTaskList,
                 JdaTaskRepositoryException::new);
     }
     
     private Task getTask(long user, Object key, KeyType type) throws JdaTaskRepositoryException {
         return JdbcSqlUtil.query(dataSource, JdbcSqlUtil.FunctionType.QUERY,
-                (connection) -> {
-                    PreparedStatement stmt = connection.prepareStatement(String.format(""
-                            + "SELECT"
-                            + " task_name, task_type, task_status, task_priority,"
-                            + " period_seconds, description, deadline, start_time"
-                            + " FROM akasha_task"
-                            + " WHERE user_id = ?"
-                            + " AND %s = ?"
-                            + " LIMIT 1",
-                            type.column));
-                    stmt.setLong(1, user);
-                    stmt.setObject(2, key);
-                    return stmt;
-                },
+                JdbcSqlUtil.statement(
+                        String.format(""
+                                + "SELECT"
+                                + " task_name, task_type, task_status, task_priority,"
+                                + " period_seconds, description, deadline, start_time"
+                                + " FROM akasha_task"
+                                + " WHERE user_id = ?"
+                                + " AND %s = ?"
+                                + " LIMIT 1",
+                                type.column),
+                        user,
+                        key),
                 this::resultSetToTask,
                 JdaTaskRepositoryException::new);
     }
