@@ -118,22 +118,24 @@ public class MessageMultiTemplate {
         Map<String, MessageTemplate> result = new HashMap<>();
         
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
-            String key = null;
+            String section = null;
             boolean emptyLine = false;
             ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
             
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                Matcher section = SECTION.matcher(line);
-                if (section.matches()) {
-                    // Store previous body, allocate new body
+                Matcher sectionRegex = SECTION.matcher(line);
+                if (sectionRegex.matches()) {
+                    // Store previous section's body
                     byte[] body = out.toByteArray();
-                    sections.put(key, body);
-                    result.put(key, new MessageTemplate(resource, new ConstInputStreamSupplier(body)));
+                    sections.put(section, body);
+                    result.put(section, new MessageTemplate(resource, new ConstInputStreamSupplier(body))
+                            .preSet("__SECTION__", section));
                     
+                    // Allocate new output array
                     out = new ByteArrayOutputStream(1024);
                     
                     // Start new header line
-                    key = section.group(1).trim();
+                    section = sectionRegex.group(1).trim();
                     emptyLine = false;
                 } else {
                     // Append a newline if a blank line was previously input
@@ -141,10 +143,10 @@ public class MessageMultiTemplate {
                         out.write('\n');
                     
                     // Check for include lines
-                    Matcher include = INCLUDE.matcher(line);
-                    if (include.matches()) {
+                    Matcher includeRegex = INCLUDE.matcher(line);
+                    if (includeRegex.matches()) {
                         // When include line is detected, write previous section into body
-                        String includeSection = include.group(1).trim();
+                        String includeSection = includeRegex.group(1).trim();
                         byte[] includeBody = sections.get(includeSection);
                         if (includeBody == null) {
                             out.write(("$$ INCLUDE ERROR :: [" + includeSection + "] :: NOT FOUND $$")
@@ -167,7 +169,7 @@ public class MessageMultiTemplate {
             }
             
             // Store last body
-            result.put(key, new MessageTemplate(resource,
+            result.put(section, new MessageTemplate(resource,
                     new ConstInputStreamSupplier(out.toByteArray())));
         }
         catch (IOException ex) {

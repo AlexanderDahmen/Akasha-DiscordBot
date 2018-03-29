@@ -35,6 +35,7 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
     
     private final MessageResource resources;
     private final Supplier<InputStream> inputSupplier;
+    private final Map<String, Object> presetVariables;
     
     /**
      * Load a MessageTemplate from a specified message resource in the default language
@@ -59,8 +60,7 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
      * @param resource Resource to load
      */
     public MessageTemplate(MessageResource resources, String resource) {
-        this.inputSupplier = resources.getResourceSupplier(resource);
-        this.resources = resources;
+        this(resources, resources.getResourceSupplier(resource));
     }
     
     /**
@@ -72,15 +72,6 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
         this(new MessageResource(language), inputSupplier);
     }
     
-    /**
-     * Create a MessageTemplate with a specified MessageResource from an InputStream-Supplier
-     * @param resource MessageResource of the MessageTemplate
-     * @param inputSupplier Supplier for message content InputStreams
-     */
-    public MessageTemplate(MessageResource resource, Supplier<InputStream> inputSupplier) {
-        this.inputSupplier = inputSupplier;
-        this.resources = resource;
-    }
     
     /**
      * Join multiple MessageTemplates, using a specified language
@@ -97,8 +88,20 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
      * @param templates Templates to join into this combined MessageTemplate
      */
     public MessageTemplate(MessageResource resources, MessageTemplate... templates) {
+        this.presetVariables = new HashMap<>();
         this.inputSupplier = join(templates);
         this.resources = resources;
+    }
+    
+    /**
+     * Create a MessageTemplate with a specified MessageResource from an InputStream-Supplier
+     * @param resource MessageResource of the MessageTemplate
+     * @param inputSupplier Supplier for message content InputStreams
+     */
+    public MessageTemplate(MessageResource resource, Supplier<InputStream> inputSupplier) {
+        this.presetVariables = new HashMap<>();
+        this.inputSupplier = inputSupplier;
+        this.resources = resource;
     }
     
     /**
@@ -107,19 +110,21 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
      * @param templates Templates to join (must not be empty or null)
      */
     public MessageTemplate(MessageTemplate... templates) {
+        this.presetVariables = new HashMap<>();
         this.inputSupplier = join(templates);
         this.resources = templates[0].resources;
     }
     
-    private Supplier<InputStream> join(MessageTemplate... templates) {
-        if (templates.length < 1)
-            throw new IllegalArgumentException("Empty MessageTemplate array");
-        
-        InputStream[] streams = new InputStream[templates.length];
-        for (int i = 0; i < templates.length; i++)
-            streams[i] = templates[i].get();
-        
-        return (() -> new ConcatInputStream(streams));
+    /**
+     * Add a preset variable that will be present in all evaluations of this
+     * template (unless they're overwritten by variables passed for templating)
+     * @param variable Preset variable name
+     * @param preset Preset variable value
+     * @return This
+     */
+    public MessageTemplate preSet(String variable, Object preset) {
+        presetVariables.put(variable, preset);
+        return this;
     }
     
     /**
@@ -197,6 +202,17 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
         }
     }
     
+    private Supplier<InputStream> join(MessageTemplate... templates) {
+        if (templates.length < 1)
+            throw new IllegalArgumentException("Empty MessageTemplate array");
+        
+        InputStream[] streams = new InputStream[templates.length];
+        for (int i = 0; i < templates.length; i++)
+            streams[i] = templates[i].get();
+        
+        return (() -> new ConcatInputStream(streams));
+    }
+    
     /**
      * Nested class for intermediary in-build MessageTemplates
      */
@@ -204,7 +220,8 @@ public class MessageTemplate implements Supplier<InputStream>, Function<Map<Stri
         private final Map<String, Object> variables;
 
         private BuildMessageTemplate() {
-            this.variables = new HashMap<>();
+            // Initialize with preset variables of outer instance
+            this.variables = new HashMap<>(presetVariables);
         }
         
         /**

@@ -1,0 +1,19 @@
+(!) _Section not found_: ${__SECTION__}
+
+
+[Initial]
+Okay, I will create a new ${type}.
+
+[AskType]
+What type of task to you want to create? [Deadline, Repeat]
+
+[UnknownType]
+I don't know that task type: `${type}`
+
+[DoneFailure]
+Done. No task was created.
+
+[DoneSuccess]
+Done! Task created:
+
+${info}
