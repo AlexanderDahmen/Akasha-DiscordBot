@@ -53,6 +53,18 @@
             <version>5.0.7</version>
         </dependency>
         
+        <!-- Quartz scheduling -->
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz-jobs</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        
         <!-- Project Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -5,7 +5,6 @@ import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
-import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -48,7 +47,7 @@ public class DefaultConversationDispatch implements ConversationDispatch {
         final MessageChannel channel = message.getChannel();
         
         // Send a typing event
-        channel.sendTyping().queue();
+        channel.sendTyping().complete();
         
         // Continue an active conversation, or create a new conversation instance
         final Conversation.Instance active = activeConversations.get(author);

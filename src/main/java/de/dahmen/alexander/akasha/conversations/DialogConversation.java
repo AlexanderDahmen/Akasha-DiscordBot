@@ -1,10 +1,15 @@
 
 package de.dahmen.alexander.akasha.conversations;
 
-import de.dahmen.alexander.akasha.config.ConversationConfig;
 import de.dahmen.alexander.akasha.core.conversation.GeneratorConversationInstance;
-import de.dahmen.alexander.akasha.core.repository.RepositoryException;
+import de.dahmen.alexander.akasha.core.conversation.message.MessageMultiTemplate;
+import de.dahmen.alexander.akasha.core.conversation.message.MessageTemplate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import net.dv8tion.jda.core.entities.Message;
 
 /**
  * Intermediary class for generator conversation instances, adding some
@@ -13,10 +18,9 @@ import java.util.regex.Pattern;
  * @author Alexander
  */
 public abstract class DialogConversation extends GeneratorConversationInstance {
-
-    public DialogConversation(ConversationConfig config) {
-        super(config);
-    }
+    
+    protected static final DateTimeFormatter TIME_FORMAT = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive().appendPattern("HH:mm:ss").toFormatter();
     
     public DialogConversation(long timeoutMillis) {
         super(timeoutMillis);
@@ -38,12 +42,12 @@ public abstract class DialogConversation extends GeneratorConversationInstance {
         }
     }
 
-    protected boolean askOkay(
-            Object okayPrompt, Pattern yes, Pattern no)
+    protected boolean askYesNo(
+            Object yesNoPrompt, Pattern yes, Pattern no)
             throws InterruptedException
     {
         while (true) {
-            yield(okayPrompt);
+            yield(yesNoPrompt);
             String answer = message().getContentStripped();
             if (yes.matcher(answer).matches()) {
                 return true;
@@ -61,10 +65,70 @@ public abstract class DialogConversation extends GeneratorConversationInstance {
     {
         while (true) {
             T result = function.get();
-            if (askOkay(okayPrompt, yes, no)) {
+            if (askYesNo(okayPrompt, yes, no)) {
                 return result;
             }
         }
+    }
+    
+    protected String cronDialog(
+            Pattern yes, Pattern no,
+            MessageMultiTemplate cronTemplates,
+            Function<String, Boolean> checkValid)
+            throws InterruptedException
+    {
+        MessageTemplate
+                canYouDoCron = cronTemplates.get("CanYouDoCron"),
+                askCron = cronTemplates.get("AskCron"),
+                invalidCron = cronTemplates.get("InvalidCron"),
+                cantCronThis = cronTemplates.get("CantCronThis"),
+                askDayOfMonth = cronTemplates.get("AskDayOfMonth"),
+                askMonth = cronTemplates.get("AskMonth"),
+                askDayOfWeek = cronTemplates.get("AskDayOfWeek");
+        MessageTemplate.BuildMessageTemplate
+                askSeconds = cronTemplates.get("AskSeconds").set("max", 60),
+                askMinutes = cronTemplates.get("AskMinutes").set("max", 60),
+                askHours = cronTemplates.get("AskHours").set("max", 24);
+        
+        // Do direct input if possible
+        boolean directInput = askYesNo(canYouDoCron, yes, no);
+        if (!directInput)
+            respond(cantCronThis);
+        
+        while (true) {
+            String resultCron;
+            
+            if (directInput) {
+                resultCron = yieldMessage(askCron).getContentRaw().trim();
+            } else {
+                String seconds = contentWithoutWhitespace(yieldMessage(askSeconds));
+                String minutes = contentWithoutWhitespace(yieldMessage(askMinutes));
+                String hours = contentWithoutWhitespace(yieldMessage(askHours));
+                String dom = contentWithoutWhitespace(yieldMessage(askDayOfMonth));
+                String month = contentWithoutWhitespace(yieldMessage(askMonth));
+                String dow = contentWithoutWhitespace(yieldMessage(askDayOfWeek));
+                resultCron = new StringJoiner(" ")
+                        .add(seconds).add(minutes).add(hours).add(dom).add(month).add(dow)
+                        .toString();
+            }
+            
+            boolean okay = checkValid.apply(resultCron);
+            if (okay) {
+                return resultCron;
+            } else {
+                boolean tryAgain = askYesNo(
+                        invalidCron.set("cron", resultCron),
+                        yes, no);
+                
+                if (!tryAgain) {
+                    stop();
+                }
+            }
+        }
+    }
+    
+    private String contentWithoutWhitespace(Message message) {
+        return message.getContentRaw().replaceAll("\\s", "");
     }
     
     @FunctionalInterface

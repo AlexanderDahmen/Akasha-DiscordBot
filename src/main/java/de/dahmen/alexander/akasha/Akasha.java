@@ -27,7 +27,8 @@ import org.flywaydb.core.Flyway;
 import de.dahmen.alexander.akasha.core.conversation.ConversationDispatch;
 import de.dahmen.alexander.akasha.core.listener.AkashaListener;
 import de.dahmen.alexander.akasha.core.listener.LifecycleListener;
-import lombok.AllArgsConstructor;
+import de.dahmen.alexander.akasha.core.service.ScheduleService;
+import de.dahmen.alexander.akasha.service.quartz.QuartzScheduleService;
 
 /**
  *
@@ -47,13 +48,15 @@ public class Akasha {
         migrate(database);
         
         JDA jda = createJDA(config.get(DiscordConfig.class).getToken());
+        
         JdaTaskRepository taskRepository = new MysqlJdaTaskRepository(database);
         JdaUserRepository userRepository = new MysqlJdaUserRepository(jda, database);
+        ScheduleService scheduleService = new QuartzScheduleService().start();
         
         ConversationConfig cc = config.get(ConversationConfig.class);
         List<Conversation> conversations = Collections.unmodifiableList(Arrays.asList(
                 new MentionReplyConversation(),
-                new CreateTaskConversation(cc, userRepository, taskRepository),
+                new CreateTaskConversation(cc, userRepository, taskRepository, scheduleService),
                 new DefaultFallbackConversation()));
         
         ConversationDispatch dispatch = new DefaultConversationDispatch(conversations);

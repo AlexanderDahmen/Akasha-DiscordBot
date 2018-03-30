@@ -14,11 +14,11 @@ import de.dahmen.alexander.akasha.core.entity.TaskStatus;
 import de.dahmen.alexander.akasha.core.repository.JdaTaskRepository;
 import de.dahmen.alexander.akasha.core.repository.JdaUserRepository;
 import de.dahmen.alexander.akasha.core.repository.RepositoryException;
+import de.dahmen.alexander.akasha.core.service.ScheduleService;
 import java.sql.Time;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.Date;
 import java.util.regex.Pattern;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.User;
@@ -28,12 +28,12 @@ import net.dv8tion.jda.core.entities.User;
  * @author Alexander
  */
 @Slf4j
+@AllArgsConstructor
 public class CreateTaskConversation implements Conversation {
     
-    private static final DateTimeFormatter TIME_FORMAT = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive().appendPattern("HH:mm:ss").toFormatter();
-    
     private final MessageTemplate errorMessage = new MessageTemplate("error/ErrorMessage");
+    private final MessageMultiTemplate cronDialog = new MessageMultiTemplate("cron/CronDialog");
+    
     private final MessageStrings strings = new MessageStrings("create_task/CreateTaskStrings");
     private final MessageMultiTemplate templates = new MessageMultiTemplate("create_task/CreateTask");
     private final MessageTemplate
@@ -47,6 +47,8 @@ public class CreateTaskConversation implements Conversation {
             unknownType         = templates.get("UnknownType"),
             doneFailure         = templates.get("DoneFailure"),
             doneSuccess         = templates.get("DoneSuccess");
+    
+    
     private final Pattern
             answerYes       = Pattern.compile(strings.get("AnswerYes"), Pattern.CASE_INSENSITIVE),
             answerNo        = Pattern.compile(strings.get("AnswerNo"), Pattern.CASE_INSENSITIVE);
@@ -54,16 +56,7 @@ public class CreateTaskConversation implements Conversation {
     private final ConversationConfig config;
     private final JdaUserRepository users;
     private final JdaTaskRepository tasks;
-
-    public CreateTaskConversation(
-            ConversationConfig config,
-            JdaUserRepository users,
-            JdaTaskRepository tasks)
-    {
-        this.config = config;
-        this.users = users;
-        this.tasks = tasks;
-    }
+    private final ScheduleService schedule;
     
     @Override
     public boolean accept(Message message) {
@@ -81,7 +74,7 @@ public class CreateTaskConversation implements Conversation {
         String info = "";
         
         public CreateTaskInstance() {
-            super(config);
+            super(config.getTimeoutMilliseconds());
         }
         
         @Override
@@ -131,11 +124,8 @@ public class CreateTaskConversation implements Conversation {
             }
             
             while (result == null) {
-                yield(askType);
-                
-                String typeMessage = message().getContentStripped();
+                String typeMessage = yieldMessage(askType).getContentStripped();
                 result = parseTaskType(typeMessage);
-                
                 if (result == null)
                     respond(unknownType.set("type", shorten(typeMessage)));
             }
@@ -149,13 +139,9 @@ public class CreateTaskConversation implements Conversation {
                 InterruptedException,
                 RepositoryException
         {
-            int repeatSeconds = -1;
-            
             String taskName = untilOkay(askOkay, answerYes, answerNo, () -> {
                 while (true) {
-                    yield(askName);
-                    String name = message().getContentRaw();
-                    
+                    String name = yieldMessage(askName).getContentRaw();
                     if (tasks.taskNameExists(user, name)) {
                         respond(taskAlreadyExists.set("name", name));
                     } else {
@@ -164,25 +150,27 @@ public class CreateTaskConversation implements Conversation {
                 }
             });
             
-            String description = untilOkay(askOkay, answerYes, answerNo, () -> {
-                yield(askDescription);
-                return message().getContentRaw();
-            });
+            String description = untilOkay(askOkay, answerYes, answerNo,
+                    () -> yieldMessage(askDescription).getContentRaw());
             
             TaskPriority taskPriority = TaskPriority.fromOrdinal(askInt(
                     askPriority, 0, TaskPriority.values().length));
             
+            //TODO Input of start time
             Time startTime = new Time(new Date().getTime());
+            
+            String cron = cronDialog(
+                    answerYes, answerNo, cronDialog,
+                    schedule::isValidCronSchedule);
             
             return new RepeatTask(
                     taskName, description, TaskStatus.OPEN,
-                    taskPriority, startTime, repeatSeconds);
+                    taskPriority, startTime, cron);
         }
         
         private Task createDeadlineTask(User user) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
-        
     }
     
     private static Task.Type parseTaskType(String type) {

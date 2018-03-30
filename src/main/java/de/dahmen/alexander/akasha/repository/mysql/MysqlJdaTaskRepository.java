@@ -45,15 +45,16 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
                 (connection) -> {
                     PreparedStatement stmt = connection.prepareStatement(""
                             + "UPDATE akasha_task SET"
-                            + " task_name = ?,"
-                            + " task_type = ?,"
-                            + " task_status = ?,"
-                            + " task_priority = ?,"
-                            + " period_seconds = ?,"
-                            + " description = ?,"
-                            + " deadline = ?,"
-                            + " start_time = ?"
-                            + " WHERE id = ?");
+                            + " task_name = ?," // 1
+                            + " task_type = ?," // 2
+                            + " task_status = ?," // 3
+                            + " task_priority = ?," // 4
+                            + " period_seconds = ?," // 5
+                            + " description = ?," // 6
+                            + " deadline = ?," // 7
+                            + " start_time = ?," // 8
+                            + " repeat_cron = ?" // 9
+                            + " WHERE id = ?"); // 10 [*]
                     
                     stmt.setString  (1, update.getName());
                     stmt.setInt     (2, update.getType().ordinal());
@@ -65,16 +66,18 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
                             stmt.setInt         (5, ((RepeatTask)update).getRepeatSeconds());
                             stmt.setNull        (7, java.sql.Types.TIMESTAMP);
                             stmt.setTime        (8, ((RepeatTask)update).getStartTime());
+                            stmt.setString      (9, ((RepeatTask)update).getCron());
                             break;
                         case DEADLINE:
                             stmt.setInt         (5, ((DeadlineTask)update).getRemindSeconds());
                             stmt.setTimestamp   (7, ((DeadlineTask)update).getDeadline());
                             stmt.setNull        (8, java.sql.Types.TIME);
+                            stmt.setNull        (9, java.sql.Types.VARCHAR);
                             break;
                         default:
                             throw new AssertionError(update.getType().name());
                     }
-                    stmt.setLong(9, id);
+                    stmt.setLong(10, id);
                     
                     return stmt;
                 },
@@ -135,8 +138,8 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
         return JdbcSqlUtil.query(dataSource, JdbcSqlUtil.FunctionType.QUERY,
                 JdbcSqlUtil.statement(""
                         + "SELECT"
-                        + " task_name, task_type, task_status, task_priority,"
-                        + " period_seconds, description, deadline, start_time"
+                        + " task_name, task_type, task_status, task_priority, description,"
+                        + " period_seconds, deadline, start_time, repeat_cron"
                         + " FROM akasha_task"
                         + " WHERE user_id = ?",
                         user.getIdLong()),
@@ -149,8 +152,8 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
                 JdbcSqlUtil.statement(
                         String.format(""
                                 + "SELECT"
-                                + " task_name, task_type, task_status, task_priority,"
-                                + " period_seconds, description, deadline, start_time"
+                                + " task_name, task_type, task_status, task_priority, description,"
+                                + " period_seconds, , deadline, start_time, repeat_cron"
                                 + " FROM akasha_task"
                                 + " WHERE user_id = ?"
                                 + " AND %s = ?"
@@ -182,6 +185,7 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
                         TaskStatus.fromOrdinal(rset.getInt("task_status")),
                         TaskPriority.fromOrdinal(rset.getInt("task_priority")),
                         rset.getTime("start_time"),
+                        rset.getString("repeat_cron"),
                         rset.getInt("period_seconds"));
             case DEADLINE:
                 return new DeadlineTask(
@@ -201,9 +205,9 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
                 (connection) -> {
                     PreparedStatement stmt = connection.prepareStatement(""
                             + "INSERT INTO akasha_task"
-                            + " (user_id, task_name, task_type, task_status,"
-                            + " task_priority, period_seconds, description, start_time)"
-                            + " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            + " (user_id, task_name, task_type, task_status, task_priority,"
+                            + " period_seconds, description, start_time, repeat_cron)"
+                            + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                             Statement.RETURN_GENERATED_KEYS);
                     stmt.setLong    (1, user);
                     stmt.setString  (2, task.getName());
@@ -213,6 +217,7 @@ public class MysqlJdaTaskRepository implements JdaTaskRepository {
                     stmt.setInt     (6, task.getRepeatSeconds());
                     stmt.setString  (7, task.getDescription());
                     stmt.setTime    (8, task.getStartTime());
+                    stmt.setString  (9, task.getCron());
                     return stmt;
                 },
                 JdbcSqlUtil.GENERATED_ID_LONG,
