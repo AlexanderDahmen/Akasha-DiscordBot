@@ -1,0 +1,22 @@
+(!) _Section not found_: ${__SECTION__}
+
+[HowOften]
+How often do you want to be reminded?
+  1. Hourly
+  2. Daily
+  3. Weekly
+  4. Monthly
+  5. Yearly
+  0. Other (cron-expression)
+
+[AskWeekday]
+On which day of the week? [1 (Monday) - 7 (Sunday)]
+
+[AskMonthday]
+On which day of the month? [1 - 31]
+
+[AskDate]
+On which date? [YYYY-MM-DD]
+
+[AskTime]
+At which time? [hh:mm]

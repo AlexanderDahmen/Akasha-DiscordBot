@@ -1,7 +1,6 @@
 
 package de.dahmen.alexander.akasha.core.conversation;
 
-import de.dahmen.alexander.akasha.config.ConversationConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +16,7 @@ import net.dv8tion.jda.core.entities.Message;
 public abstract class GeneratorConversationInstance implements Conversation.Instance {
     
     private static final ThreadGroup THREAD_GROUP = new ThreadGroup("conversation_threads");
-    
+
     private final AtomicReference<Message> nextMessage;
     private final Condition responseAvailableOrFinished;
     private final Condition responseRequested;
@@ -28,10 +27,6 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
     private boolean hasFinished;
     private boolean nextResponseAvailable;
     private Exception raisedException;
-
-    public GeneratorConversationInstance(ConversationConfig config) {
-        this(config.getTimeoutMilliseconds());
-    }
     
     public GeneratorConversationInstance(long timeoutMillis) {
         this.responseAvailableOrFinished = new Condition();
@@ -80,6 +75,8 @@ public abstract class GeneratorConversationInstance implements Conversation.Inst
      * @throws InterruptedException If the execution is interrupted
      * @see GeneratorConversationInstance#yield()
      * @see GeneratorConversationInstance#yield(java.lang.Object)
+     * @see GeneratorConversationInstance#yieldMessage()
+     * @see GeneratorConversationInstance#yieldMessage(java.lang.Object)
      * @see GeneratorConversationInstance#respond(java.lang.Object)
      * @see GeneratorConversationInstance#message() 
      */

@@ -27,12 +27,12 @@ What priority does the task have?
   3. High
   4. *Pants on Fire!!*
 
+[AskTimezone]
+For me, it is currently ${now}.
+How many hours before/after is your current time? [from -18 to +18]
+
 [AskOkay]
 Is that okay? [Yes, No]
-
-[AskTime]
-For me, it is currently ${now}.
-When should the task start? [hh:mm:ss]
 
 [DoneFailure]
 Done. No task was created.

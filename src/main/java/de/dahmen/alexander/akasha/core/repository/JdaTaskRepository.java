@@ -11,19 +11,23 @@ import net.dv8tion.jda.core.entities.User;
  */
 public interface JdaTaskRepository {
     
-    long storeTask(User user, Task task) throws JdaTaskRepositoryException;
+    long storeTask(Task task) throws JdaTaskRepositoryException;
     
-    boolean updateTask(long taskId, Task update) throws JdaTaskRepositoryException;
+    boolean deleteTask(long taskId) throws JdaTaskRepositoryException;
+    
+    boolean updateTask(Task update) throws JdaTaskRepositoryException;
     
     boolean taskNameExists(User user, String taskName) throws JdaTaskRepositoryException;
     
     Long getIdByName(User user, String taskName) throws JdaTaskRepositoryException;
     
-    Task getTaskById(User user, long taskId) throws JdaTaskRepositoryException;
+    Task getTaskById(long taskId) throws JdaTaskRepositoryException;
     
     Task getTaskByName(User user, String taskName) throws JdaTaskRepositoryException;
     
     List<Task> getTasks(User user) throws JdaTaskRepositoryException;
+    
+    boolean hasTasks(User user) throws JdaTaskRepositoryException;
     
     class JdaTaskRepositoryException extends RepositoryException {
         public JdaTaskRepositoryException(SQLException ex) {

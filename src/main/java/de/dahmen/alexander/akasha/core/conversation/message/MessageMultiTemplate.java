@@ -151,8 +151,8 @@ public class MessageMultiTemplate {
                     } else if (!line.isEmpty()) {
                         // Append body line
                         out.write(line.getBytes(MessageResource.CHARSET));
+                        out.write('\n');
                     }
-                    out.write('\n');
                 }
             }
             

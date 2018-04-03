@@ -13,6 +13,12 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 @Slf4j
 public class LifecycleListener extends ListenerAdapter {
     
+    private final Runnable[] runOnShutdown;
+
+    public LifecycleListener(Runnable... runOnShutdown) {
+        this.runOnShutdown = runOnShutdown;
+    }
+    
     @Override
     public void onReady(ReadyEvent event) {
         log.info("Akasha -- Ready");
@@ -24,5 +30,9 @@ public class LifecycleListener extends ListenerAdapter {
                 event.getCloseCode().name(),
                 event.getShutdownTime(),
                 event.getCloseCode().getMeaning());
+        
+        for (Runnable runnable : runOnShutdown) {
+            runnable.run();
+        }
     }
 }

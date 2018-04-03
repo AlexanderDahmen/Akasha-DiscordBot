@@ -87,6 +87,7 @@ public class MysqlJdaUserRepository implements JdaUserRepository {
                             + "SELECT channel_id"
                             + " FROM akasha_user"
                             + " WHERE id = ?");
+                    stmt.setLong(1, user);
                     return stmt;
                 },
                 (rset) -> (rset.next()) ? rset.getLong(1) : 0,

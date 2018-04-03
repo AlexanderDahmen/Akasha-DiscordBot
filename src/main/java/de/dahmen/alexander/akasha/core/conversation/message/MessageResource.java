@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,10 +36,11 @@ public class MessageResource {
      */
     @AllArgsConstructor
     public static enum Language {
-        ENGLISH ("en");
+        ENGLISH ("en", Locale.UK),
+        ;
         
-        @Getter
-        private final String directory;
+        @Getter private final String directory;
+        @Getter private final Locale locale;
     }
     
     @Value

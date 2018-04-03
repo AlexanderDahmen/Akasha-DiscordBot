@@ -53,16 +53,11 @@
             <version>5.0.7</version>
         </dependency>
         
-        <!-- Quartz scheduling -->
+        <!-- Cron-Expression parsing -->
         <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz-jobs</artifactId>
-            <version>2.3.0</version>
+            <groupId>com.cronutils</groupId>
+            <artifactId>cron-utils</artifactId>
+            <version>7.0.1</version>
         </dependency>
         
         <!-- Project Lombok -->

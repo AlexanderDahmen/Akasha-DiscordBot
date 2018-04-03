@@ -3,9 +3,7 @@ package de.dahmen.alexander.akasha;
 
 import de.dahmen.alexander.akasha.config.*;
 import de.dahmen.alexander.akasha.config.lib.Config;
-import de.dahmen.alexander.akasha.conversations.CreateTaskConversation;
-import de.dahmen.alexander.akasha.conversations.DefaultFallbackConversation;
-import de.dahmen.alexander.akasha.conversations.MentionReplyConversation;
+import de.dahmen.alexander.akasha.conversations.*;
 import de.dahmen.alexander.akasha.core.conversation.Conversation;
 import de.dahmen.alexander.akasha.core.conversation.DefaultConversationDispatch;
 import de.dahmen.alexander.akasha.core.repository.JdaTaskRepository;
@@ -27,8 +25,10 @@ import org.flywaydb.core.Flyway;
 import de.dahmen.alexander.akasha.core.conversation.ConversationDispatch;
 import de.dahmen.alexander.akasha.core.listener.AkashaListener;
 import de.dahmen.alexander.akasha.core.listener.LifecycleListener;
-import de.dahmen.alexander.akasha.core.service.ScheduleService;
-import de.dahmen.alexander.akasha.service.quartz.QuartzScheduleService;
+import de.dahmen.alexander.akasha.core.service.CronService;
+import de.dahmen.alexander.akasha.core.service.JdaTaskReminderService;
+import de.dahmen.alexander.akasha.service.cronutil.CronUtilsCronService;
+import de.dahmen.alexander.akasha.service.scheduled.ScheduledJdaTaskReminderService;
 
 /**
  *
@@ -40,32 +40,52 @@ public class Akasha {
     private static final List<Class<?>> CONFIG_CLASSES = Collections.unmodifiableList(Arrays.asList(
             DatabaseConfig.class,
             DiscordConfig.class,
-            ConversationConfig.class));
+            ConversationConfig.class,
+            ReminderConfig.class));
+    
+    private static JDA jda;
+    private static Object[] closeOnShutdown;
     
     public static void main(String[] args) throws Exception {
         Config config = Config.load(CONFIG_FILE, CONFIG_CLASSES);
         DataSource database = createDataSource(config.get(DatabaseConfig.class));
         migrate(database);
         
-        JDA jda = createJDA(config.get(DiscordConfig.class).getToken());
+        jda = createJDA(config.get(DiscordConfig.class).getToken());
         
         JdaTaskRepository taskRepository = new MysqlJdaTaskRepository(database);
         JdaUserRepository userRepository = new MysqlJdaUserRepository(jda, database);
-        ScheduleService scheduleService = new QuartzScheduleService().start();
+        CronService cronService = new CronUtilsCronService();
+        JdaTaskReminderService reminderService = new ScheduledJdaTaskReminderService(
+                config.get(ReminderConfig.class),
+                taskRepository, userRepository,
+                cronService);
         
-        ConversationConfig cc = config.get(ConversationConfig.class);
+        reminderService.initialize();
+        
         List<Conversation> conversations = Collections.unmodifiableList(Arrays.asList(
+                new HelloConversation(),
                 new MentionReplyConversation(),
-                new CreateTaskConversation(cc, userRepository, taskRepository, scheduleService),
+                new CreateTaskConversation(
+                        config.get(ConversationConfig.class),
+                        reminderService,
+                        cronService),
+                new ShutdownConversation(),
                 new DefaultFallbackConversation()));
         
         ConversationDispatch dispatch = new DefaultConversationDispatch(conversations);
         jda.addEventListener(new AkashaListener(dispatch));
         
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            safeClose(database);
-            jda.shutdown();
-        }));
+        closeOnShutdown = new Object[] {
+            database,
+            reminderService,
+        };
+    }
+    
+    public static void shutdown() {
+        for (Object object : closeOnShutdown) {
+            safeClose(object);
+        }
     }
     
     private static DataSource createDataSource(DatabaseConfig config) {
@@ -89,7 +109,7 @@ public class Akasha {
         return new JDABuilder(AccountType.BOT)
                 .setToken(token)
                 .setStatus(OnlineStatus.ONLINE)
-                .addEventListener(new LifecycleListener())
+                .addEventListener(new LifecycleListener(Akasha::shutdown))
                 .setAutoReconnect(true)
                 .buildBlocking();
     }

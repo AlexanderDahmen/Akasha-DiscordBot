@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import javax.sql.DataSource;
 
 /**
@@ -48,6 +49,7 @@ public class JdbcSqlUtil {
     public final static ResultFunction<Object> GENERATED_ID = (r, g, u) -> g;
     public final static ResultFunction<Long> GENERATED_ID_LONG = (r, g, u) -> ((Number) g).longValue();
     public final static ResultFunction<Boolean> RESULTSET_HAS_NEXT = (r, g, u) -> r.next();
+    public final static ResultFunction<Boolean> UPDATE_COUNT_NOT_ZERO = (r, g, u) -> (u != 0);
     
     public static <T> T query(
             DataSource dataSource,
@@ -195,6 +197,15 @@ public class JdbcSqlUtil {
     public static StatementFunction statement(String sql, Object... parameters) {
         return (connection) -> {
             PreparedStatement stmt = connection.prepareStatement(sql);
+            for (int i = 0; i < parameters.length; i++)
+                stmt.setObject(i + 1, parameters[i]);
+            return stmt;
+        };
+    }
+    
+    public static StatementFunction statementGeneratedId(String sql, Object... parameters) {
+        return (connection) -> {
+            PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             for (int i = 0; i < parameters.length; i++)
                 stmt.setObject(i + 1, parameters[i]);
             return stmt;

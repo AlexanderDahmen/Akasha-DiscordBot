@@ -2,14 +2,11 @@
 package de.dahmen.alexander.akasha.conversations;
 
 import de.dahmen.alexander.akasha.core.conversation.GeneratorConversationInstance;
-import de.dahmen.alexander.akasha.core.conversation.message.MessageMultiTemplate;
-import de.dahmen.alexander.akasha.core.conversation.message.MessageTemplate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.StringJoiner;
-import java.util.function.Function;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.regex.Pattern;
-import net.dv8tion.jda.core.entities.Message;
 
 /**
  * Intermediary class for generator conversation instances, adding some
@@ -19,17 +16,23 @@ import net.dv8tion.jda.core.entities.Message;
  */
 public abstract class DialogConversation extends GeneratorConversationInstance {
     
-    protected static final DateTimeFormatter TIME_FORMAT = new DateTimeFormatterBuilder()
-            .parseCaseInsensitive().appendPattern("HH:mm:ss").toFormatter();
+    protected static final DateTimeFormatter TIME_FORMAT = new DateTimeFormatterBuilder().appendPattern("HH:mm").parseCaseInsensitive().toFormatter();
+    protected static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd").parseCaseInsensitive().toFormatter();
+    protected static final DateTimeFormatter DATETIME_FORMAT = new DateTimeFormatterBuilder().appendPattern("yyy-MM-dd HH:mm").parseCaseInsensitive().toFormatter();
     
     public DialogConversation(long timeoutMillis) {
         super(timeoutMillis);
     }
-
-    protected int askInt(
-            Object prompt, int from, int to)
-            throws InterruptedException
-    {
+    
+    protected int askInt(Object prompt) throws InterruptedException {
+        return askInt(prompt, Integer.MIN_VALUE, Integer.MAX_VALUE);
+    }
+    
+    protected int askInt(Object prompt, int bound) throws InterruptedException {
+        return askInt(prompt, 0, bound);
+    }
+    
+    protected int askInt(Object prompt, int from, int to) throws InterruptedException {
         while (true) {
             yield(prompt);
             try {
@@ -37,27 +40,36 @@ public abstract class DialogConversation extends GeneratorConversationInstance {
                 if (result >= from && result <= to) {
                     return result;
                 }
-            } catch (NumberFormatException ex) {
-            }
+            } catch (NumberFormatException ex) { }
         }
     }
-
+    
     protected boolean askYesNo(
             Object yesNoPrompt, Pattern yes, Pattern no)
             throws InterruptedException
     {
         while (true) {
-            yield(yesNoPrompt);
-            String answer = message().getContentStripped();
-            if (yes.matcher(answer).matches()) {
-                return true;
-            }
-            if (no.matcher(answer).matches()) {
-                return false;
-            }
+            String answer = yieldMessage(yesNoPrompt).getContentStripped();
+            if (yes.matcher(answer).matches()) return true;
+            if (no.matcher(answer).matches()) return false;
         }
     }
-
+    
+    protected TemporalAccessor askDate(Object prompt) throws InterruptedException {
+        return askTemporal(prompt, DATE_FORMAT);
+    }
+    
+    protected TemporalAccessor askTime(Object prompt) throws InterruptedException {
+        return askTemporal(prompt, TIME_FORMAT);
+    }
+    
+    protected TemporalAccessor askTemporal(Object prompt, DateTimeFormatter format) throws InterruptedException {
+        while (true) {
+            try { return format.parse(yieldMessage(prompt).getContentRaw()); }
+            catch (DateTimeParseException ex) { }
+        }
+    }
+    
     protected <T> T untilOkay(
             Object okayPrompt, Pattern yes, Pattern no,
             InterruptableSupplier<T> function)
@@ -69,66 +81,6 @@ public abstract class DialogConversation extends GeneratorConversationInstance {
                 return result;
             }
         }
-    }
-    
-    protected String cronDialog(
-            Pattern yes, Pattern no,
-            MessageMultiTemplate cronTemplates,
-            Function<String, Boolean> checkValid)
-            throws InterruptedException
-    {
-        MessageTemplate
-                canYouDoCron = cronTemplates.get("CanYouDoCron"),
-                askCron = cronTemplates.get("AskCron"),
-                invalidCron = cronTemplates.get("InvalidCron"),
-                cantCronThis = cronTemplates.get("CantCronThis"),
-                askDayOfMonth = cronTemplates.get("AskDayOfMonth"),
-                askMonth = cronTemplates.get("AskMonth"),
-                askDayOfWeek = cronTemplates.get("AskDayOfWeek");
-        MessageTemplate.BuildMessageTemplate
-                askSeconds = cronTemplates.get("AskSeconds").set("max", 60),
-                askMinutes = cronTemplates.get("AskMinutes").set("max", 60),
-                askHours = cronTemplates.get("AskHours").set("max", 24);
-        
-        // Do direct input if possible
-        boolean directInput = askYesNo(canYouDoCron, yes, no);
-        if (!directInput)
-            respond(cantCronThis);
-        
-        while (true) {
-            String resultCron;
-            
-            if (directInput) {
-                resultCron = yieldMessage(askCron).getContentRaw().trim();
-            } else {
-                String seconds = contentWithoutWhitespace(yieldMessage(askSeconds));
-                String minutes = contentWithoutWhitespace(yieldMessage(askMinutes));
-                String hours = contentWithoutWhitespace(yieldMessage(askHours));
-                String dom = contentWithoutWhitespace(yieldMessage(askDayOfMonth));
-                String month = contentWithoutWhitespace(yieldMessage(askMonth));
-                String dow = contentWithoutWhitespace(yieldMessage(askDayOfWeek));
-                resultCron = new StringJoiner(" ")
-                        .add(seconds).add(minutes).add(hours).add(dom).add(month).add(dow)
-                        .toString();
-            }
-            
-            boolean okay = checkValid.apply(resultCron);
-            if (okay) {
-                return resultCron;
-            } else {
-                boolean tryAgain = askYesNo(
-                        invalidCron.set("cron", resultCron),
-                        yes, no);
-                
-                if (!tryAgain) {
-                    stop();
-                }
-            }
-        }
-    }
-    
-    private String contentWithoutWhitespace(Message message) {
-        return message.getContentRaw().replaceAll("\\s", "");
     }
     
     @FunctionalInterface

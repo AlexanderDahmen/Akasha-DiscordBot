@@ -1,35 +1,55 @@
 
 package de.dahmen.alexander.akasha.core.entity;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  *
  * @author Alexander
  */
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
-@ToString
-@Getter
-public abstract class Task {
+public class Task {
     
-    @NonNull protected final String name;
-    @NonNull protected final TaskStatus status;
-    @NonNull protected final TaskPriority priority;
-    protected final String description;
+    private long id;
+    private long userId;
+    private String name;
+    private Type type;
+    private TaskStatus status;
+    private TaskPriority priority;
+    private String description;
+    private String reminderCron;
+    private ZoneOffset timeZone;
+    private LocalDateTime lastReminder;
+    private LocalDateTime deadline;
     
-    public abstract Type getType();
+    public OffsetDateTime getZonedLastReminder() {
+        return (lastReminder == null) ? null : lastReminder.atOffset(timeZone);
+    }
+    
+    public OffsetDateTime getZonedDeadline() {
+        return (deadline == null) ? null : deadline.atOffset(timeZone);
+    }
+    
+    public void setLastReminderInstant(Instant instant) {
+        this.lastReminder = (instant == null) ? null :
+                LocalDateTime.ofInstant(instant, timeZone);
+    }
+    
+    public void setDeadlineInstant(Instant instant) {
+        this.deadline = (instant == null) ? null :
+                LocalDateTime.ofInstant(instant, timeZone);
+    }
     
     public static enum Type {
         REPEAT,
         DEADLINE;
-        
-        public static Type fromOrdinal(int ordinal) {
-            return values()[ordinal];
-        }
     }
 }
